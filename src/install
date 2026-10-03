@@ -1,0 +1,44 @@
+#!/bin/bash
+# =============================================================================
+#  Rice Installer
+#  Usage:
+#   ./install           → full install (default: run mode)
+#   ./install --check   → preflight checks only, no changes
+#   ./install --run     → full install (explicit)
+#   ./install --resume  → resume from last successful phase
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+#  CONSTANTS & GLOBAL STATE
+# =============================================================================
+## VERSION
+readonly SCRIPT_VERSION="0.0.1"
+
+## RUNNING
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly LOG_FILE="$SCRIPT_DIR/install-$(date +%Y%m%d-%H%M%S).log"
+readonly SUDO_KEEPALIVE_PID_FILE="/tmp/rice_sudo_keepalive.pid"
+readonly STATE_FILE="$SCRIPT_DIR/.install_state"
+readonly PACKAGE_LIST="$SCRIPT_DIR/packages.txt"
+
+## RICE
+readonly RICE_DIR="$HOME/.local/share/rice"
+readonly BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d-%H%M%S)"
+
+## REQUIREMENTS
+readonly MIN_DISK_MB=8192
+
+## PHASES - order matters for resume
+readonly -a PHASES=(
+
+)
+
+## INSTALLER MODE (set from CLI args)
+MODE="run"
+
+## COUNTERS FOR REPORT
+FAILED_PACKAGES=()
+FAILED_SERVICES=()
+SKIPPED_PHASES=()
