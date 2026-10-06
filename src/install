@@ -42,3 +42,101 @@ MODE="run"
 FAILED_PACKAGES=()
 FAILED_SERVICES=()
 SKIPPED_PHASES=()
+
+# =============================================================================
+#  LOGGER
+# =============================================================================
+# All output goes to stdout AND the log file
+exec > >(tee -i "$LOG_FILE") 2>&1
+
+_log() {
+    local level="$1"; shift
+    local symbol color reset;
+    reset="\e[0m"
+    case "$level" in
+        INFO)  symbol="[→]"; color="\e[34m";; # blue
+        OK)    symbol="[✓]"; color="\e[32m";; # green
+        WARN)  symbol="[!]"; color="\e[33m";; # yellow
+        ERROR) symbol="[x]"; color="\e[31m";; # red
+        STEP)  symbol="[▶]"; color="\e[36m";; # cyan
+    esac
+    echo -e "${color}${symbol} $*${reset}"
+}
+
+log_info()  { _log INFO  "$@"; }
+log_ok()    { _log OK    "$@"; }
+log_warn()  { _log WARN  "$@"; }
+log_error() { _log ERROR "$@"; }
+log_step()  { echo; _log STEP "=== $* ==="; }
+
+# =============================================================================
+#  SUDO KEEPALIVE
+# =============================================================================
+_start_sudo_keepalive() {
+    # 1. Bail early if PID file path is not set
+    if [[ -z "$SUDO_KEEPALIVE_PID_FILE" ]]; then
+        log_error "SUDO_KEEPALIVE_PID_FILE is not set."
+        return 1
+    fi
+
+    # 2. Fail fast if sudo auth fails
+    if ! sudo -v; then
+        log_error "Failed to obtain sudo credentials."
+        return 1
+    fi
+
+    # 3. Kill orphaned keepalive from a previous run, if any
+    if [[ -f "$SUDO_KEEPALIVE_PID_FILE" ]]; then
+        local old_pid
+        old_pid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
+        [[ -n "$old_pid" ]] && kill "$old_pid" 2>/dev/null
+        true
+    fi
+
+    # 4. Exit the loop if the parent process ($$) dies
+    (
+        while kill -0 "$$" 2>/dev/null; do
+            sleep 50                              # Sleep FIRST, shorter than 60s
+            sudo -n true </dev/null 2>/dev/null  # Redirect stdin/stderr to prevent prompts
+        done
+    ) &
+    local keepalive_pid=$!
+    disown "$keepalive_pid" 2>/dev/null || true
+
+    echo $! > "$SUDO_KEEPALIVE_PID_FILE"
+    log_info "Sudo keepalive started (PID: $(cat "$SUDO_KEEPALIVE_PID_FILE"))."
+}
+
+# =============================================================================
+#  TRAP: ERROR + CLEANUP
+# =============================================================================
+_on_error() {
+    local exit_code=$?
+    local line_no=$1
+    local command="$2"
+    log_error "Script failed at line ${line_no}: '${command}' (exit code: ${exit_code})"
+    log_error "Check the log for details: $LOG_FILE"
+    _cleanup
+    exit "$exit_code"
+}
+
+_cleanup() {
+    # Stop sudo keepalive background process if running
+    if [[ -f "$SUDO_KEEPALIVE_PID_FILE" ]]; then
+        local kpid
+        kpid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
+        if [[ -n "$kpid" ]] && kill -0 "$kpid" 2>/dev/null; then
+            kill "$kpid" 2>/dev/null || true
+        fi
+        rm -f "$SUDO_KEEPALIVE_PID_FILE"
+    fi
+
+    # Remove installer sudoers override
+    if [[ -f /etc/sudoers.d/rice-installer ]]; then
+        sudo rm -f /etc/sudoers.d/rice-installer
+        log_ok "Removed installer sudoers override."
+    fi
+}
+
+trap '_on_error $LINENO "$BASH_COMMAND"' ERR
+trap '_cleanup' EXIT
