@@ -140,3 +140,27 @@ _cleanup() {
 
 trap '_on_error $LINENO "$BASH_COMMAND"' ERR
 trap '_cleanup' EXIT
+
+# =============================================================================
+#  PHASE CHECKPOINT SYSTEM
+# =============================================================================
+phase_is_done() {
+    [[ -f "$STATE_FILE" ]] && grep -qx "$1" "$STATE_FILE"
+}
+
+phase_mark_done() {
+    echo "$1" >> "$STATE_FILE"
+    log_ok "Phase '$1' complete."
+}
+
+phase_run() {
+    local phase="$1"; shift
+    if [[ "$MODE" == "resume" ]] && phase_is_done "$phase"; then
+        log_info "Skipping phase '$phase' (already completed)."
+        SKIPPED_PHASES+=("$phase")
+        return 0
+    fi
+    log_step "$phase"
+    "$@"
+    phase_mark_done "$phase"
+}
