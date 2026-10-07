@@ -253,6 +253,7 @@ preflight() {
         log_warn "Relative paths (dotfiles/, packages.txt) may not resolve correctly."
     fi
 
+    # --- Check: Number of errors encountered ---
     if [[ "$errors" -gt 0 ]]; then
         log_error "Preflight failed with $errors error(s). Fix the issues above and re-run."
         exit 1
