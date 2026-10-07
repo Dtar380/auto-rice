@@ -140,3 +140,27 @@ _cleanup() {
 
 trap '_on_error $LINENO "$BASH_COMMAND"' ERR
 trap '_cleanup' EXIT
+
+# =============================================================================
+#  BASE SYSTEM
+# =============================================================================
+base_system() {
+    # Update the system
+    sudo pacman -Syu --noconfirm
+
+    # Enable multilib
+    sudo sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
+    sudo pacman -Sy
+
+    # Check kernel version
+    KERNEL_TYPE=$(uname -r | sed -E 's/^[0-9.]+-//; s/[0-9].*//; s/-$//')
+    if [[ -n "$KERNEL_TYPE" && "$KERNEL_TYPE" != "arch" ]]; then
+        HEADER_PKG="linux-${KERNEL_TYPE}-headers"
+    else
+        HEADER_PKG="linux-headers"
+    fi
+
+    # Install headers and basic packages
+    BASE_PACKAGES=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
+    sudo pacman -S --needed --noconfirm "${BASE_PACKAGES[@]}" "$HEADER_PKG"
+}
