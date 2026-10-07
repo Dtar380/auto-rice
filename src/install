@@ -164,3 +164,106 @@ phase_run() {
     "$@"
     phase_mark_done "$phase"
 }
+
+# =============================================================================
+#  PHASE: PREFLIGHT
+# =============================================================================
+preflight() {
+    local errors=0
+
+    # --- Check: Arch Linux only ---
+    if [[ ! -f /etc/arch-release ]]; then
+        log_error "This installer is for Arch Linux only. /etc/arch-release not found."
+        (( errors++ ))
+    else
+        log_ok "Arch Linux detected."
+    fi
+
+    # --- Check: not running as root ---
+    if [[[ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]]]; then
+        log_error "Do not run this script as root. RUn it as your normal user"
+        (( errors++ ))
+    else
+        log_ok "Not running as root."
+    fi
+
+    # --- Check: sudo available and works ---
+    if ! command -v sudo &>/dev/null; then
+        log_error "sudo not found. Install it first: pacman -S sudo"
+        (( errors++ ))
+    elif ! sudo -n true 2>/dev/null && ! sudo -v; then
+        log_error "Could not obtain sudo privileges."
+        (( errors++ ))
+    else
+        log_ok "sudo is available and working."
+    fi
+
+    # --- Check: packages.txt readable with at least one package ---
+    if [[ ! -f "$PACKAGE_LIST" ]]; then
+        log_error "Package list not found: $PACKAGE_LIST"
+        (( errors++ ))
+    elif [[ ! -r "$PACKAGE_LIST" ]]; then
+        log_error "Package list is not readable: $PACKAGE_LIST"
+        (( errors++ ))
+    else
+        local pkg_count
+        pkg_count=$(grep -Evc '^\s*#|^\s*$' "$PACKAGE_LIST" || true)
+        if [[ "$pkg_count" -lt 1 ]]; then
+            log_error "Package list '$PACKAGE_LIST' has no valid packages."
+            (( errors++ ))
+        else
+            log_ok "Package list found with ${pkg_count} packages."
+        fi
+    fi
+
+    # --- Check: internet connectivity ---
+    if [ ping -c "ping.archlinux.org" > /dev/null 2>&1 ]; then
+        log_error "No internet connection (archlinux.org unreachable)."
+        (( errors++ ))
+    else
+        log_ok "Internet connection available."
+    fi
+
+    # --- Check: free disk space ---
+    local free_mb
+    free_mb=$(df -m / | awk 'NR==2{print $4}')
+    if [[ "$free_mb" -lt "$MIN_DISK_MB" ]]; then
+        log_error "Insufficient disk space: ${free_mb}MB free, need ${MIN_DISK_MB}MB."
+        (( errors++ ))
+    else
+        log_ok "Disk space OK: ${free_mb}MB free."
+    fi
+
+    # --- Check: required tools exist ---
+    local required_tools=(git lspci localectl pacman)
+    for tool in "${required_tools[@]}"; do
+        if ! command -v "$tool" &>/dev/null; then
+            log_error "Required tool not found: $tool"
+            (( errors++ ))
+        fi
+    done
+    if [[ $errors -eq 0 ]] || [[ "${#required_tools[@]}" -gt 0 ]]; then
+        log_ok "Required tools check passed."
+    fi
+
+    # --- Check: script is being run from its own directory ---
+    if [[ "$SCRIPT_DIR" != "$(pwd)" ]]; then
+        log_warn "Script is not being run from its own directory."
+        log_warn "Expected: $SCRIPT_DIR — Got: $(pwd)"
+        log_warn "Relative paths (dotfiles/, packages.txt) may not resolve correctly."
+    fi
+
+    if [[ "$errors" -gt 0 ]]; then
+        log_error "Preflight failed with $errors error(s). Fix the issues above and re-run."
+        exit 1
+    fi
+
+    log_ok "All preflight checks passed."
+
+    # If check-only mode, exit cleanly here
+    if [[ "$MODE" == "check" ]]; then
+        echo
+        log_ok "Check mode complete. No changes were made."
+        exit 0
+    fi
+}
