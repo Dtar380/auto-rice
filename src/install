@@ -268,3 +268,47 @@ preflight() {
         exit 0
     fi
 }
+
+# =============================================================================
+#  PHASE: BASE SYSTEM
+# =============================================================================
+base_system() {
+    # Update the system
+    log_info "Updating system..."
+    sudo pacman -Syu --noconfirm
+    log_ok "System updated."
+
+
+    # Enable multilib
+    if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+        sudo sed -i '/\[multilib\]/{n;s/^#//}' /etc/pacman.conf
+        sudo sed -i 's/^#\(\[multilib\]\)/\1/' /etc/pacman.conf
+        sudo pacman -Sy --noconfirm
+        log_ok "multilib enabled."
+    else
+        log_ok "multilib already enabled."
+    fi
+
+    # Detect kernel package (handle multiple kernels: pick the first running one)
+    local KERNEL_TYPE=$(uname -r | sed -E 's/^[0-9.]+-//; s/[0-9].*//; s/-$//')
+    local HEADER_PKG=""
+    if [[ -n "$KERNEL_TYPE" && "$KERNEL_TYPE" != "arch" ]]; then
+        HEADER_PKG="linux-${KERNEL_TYPE}-headers"
+    else
+        HEADER_PKG="linux-headers"
+    fi
+
+    if [[ -z "$KERNEL_TYPE" ]]; then
+        log_warn "Could not detect kernel package. Skipping headers installation."
+    else
+        log_info "Detected kernel: $KERNEL_TYPE"
+    fi
+
+    # Install headers and basic packages
+    log_info "Installing base dependencies..."
+    local BASE_PACKAGES=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
+    [[ -n "$HEADER_PKG" ]] && BASE_PACKAGES+=("$HEADER_PKG")
+
+    sudo pacman -S --needed --noconfirm "${BASE_PACKAGES[@]}"
+    log_ok "Base dependencies installed."
+}
