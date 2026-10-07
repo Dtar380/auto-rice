@@ -140,3 +140,24 @@ _cleanup() {
 
 trap '_on_error $LINENO "$BASH_COMMAND"' ERR
 trap '_cleanup' EXIT
+
+# =============================================================================
+#  PREFLIGHT
+# =============================================================================
+preflight() {
+    # Check script wasn't run with sudo
+    if [[ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]]; then
+    fi
+
+    # Check packages.txt exists
+    if [ ! -f "$PACKAGE_LIST" ]; then
+    fi
+
+    # Check internet connection
+    if [ ping -c "ping.archlinux.org" > /dev/null 2>&1 ]; then
+    fi
+
+    # Check correct work of pacman
+    if [ ! command -v pacman > /dev/null 2>&1 ]; then
+    fi
+}
