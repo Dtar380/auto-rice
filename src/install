@@ -312,3 +312,20 @@ base_system() {
     sudo pacman -S --needed --noconfirm "${BASE_PACKAGES[@]}"
     log_ok "Base dependencies installed."
 }
+
+# =============================================================================
+#  PHASE: AUR HELPER
+# =============================================================================
+aur_helper() {
+    # --- Check: Is it already installed? ---
+    if command -v paru &>/dev/null; then
+        return 0
+    fi
+
+    # Install paru
+    git clone https://aur.archlinux.or/paru.git /tmp/paru
+    pushd /tmp/paru > /dev/null
+    makepkg -si --noconfirm
+    popd > /dev/null
+    rm -rf /tmp/paru
+}
