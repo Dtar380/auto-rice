@@ -320,6 +320,8 @@ aur_helper() {
     # --- Check: Is it already installed? ---
     if command -v paru &>/dev/null; then
         return 0
+    else
+
     fi
 
     # Install paru
@@ -337,6 +339,23 @@ aur_helper() {
 # =============================================================================
 #  PHASE: ZSH
 # =============================================================================
+zsh_shell() {
+    # Install if not installed
+    if ! command -v zsh &>/dev/null; then
+        sudo pacman -S zsh
+    else
+
+    fi
+
+    # Set as default shell if not set
+    local CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
+    local ZSH_PATH=$(which zsh)
+    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+        sudo cshs -s "$ZSH_PATH" "$USER"
+    else
+
+    fi
+}
 
 # =============================================================================
 #  PHASE: PACKAGE INSTALL
