@@ -319,9 +319,8 @@ base_system() {
 aur_helper() {
     # --- Check: Is it already installed? ---
     if command -v paru &>/dev/null; then
+        log_ok "Paru is already installed"
         return 0
-    else
-
     fi
 
     # Install paru
@@ -344,7 +343,7 @@ zsh_shell() {
     if ! command -v zsh &>/dev/null; then
         sudo pacman -S zsh
     else
-
+        log_ok "ZSH is already installed"
     fi
 
     # Set as default shell if not set
@@ -353,7 +352,7 @@ zsh_shell() {
     if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
         sudo cshs -s "$ZSH_PATH" "$USER"
     else
-
+        log_ok "ZSH was already set as default shell"
     fi
 }
 
