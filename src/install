@@ -32,7 +32,14 @@ readonly MIN_DISK_MB=8192
 
 ## PHASES - order matters for resume
 readonly -a PHASES=(
-
+    preflight
+    base_system
+    aur_helper
+    gpu_drivers
+    packages
+    zsh
+    services
+    finalize
 )
 
 ## INSTALLER MODE (set from CLI args)
@@ -646,7 +653,47 @@ print_report() {
 # =============================================================================
 #  ARGUMENT PARSING
 # =============================================================================
+case "${1:-}" in
+    --check)  MODE="check" ;;
+    --run)    MODE="run" ;;
+    --resume) MODE="resume" ;;
+    "")       MODE="run" ;;
+    *)
+        echo "Usage: $0 [--check | --run | --resume]"
+        echo "  --check   Preflight checks only, no changes"
+        echo "  --run     Full install (default)"
+        echo "  --resume  Resume from last successful phase"
+        exit 1
+        ;;
+esac
 
 # =============================================================================
 #  MAIN
 # =============================================================================
+echo
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Rice Installer v${SCRIPT_VERSION} — mode: ${MODE^^}"
+echo "  Log: $LOG_FILE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [[ "$MODE" == "resume" ]] && [[ ! -f "$STATE_FILE" ]]; then
+    log_warn "No state file found at $STATE_FILE. Starting fresh."
+    MODE="run"
+fi
+
+# Preflight always runs (it doesn't write state itself in check mode)
+do_preflight
+
+# Start sudo keepalive for install/resume modes
+_start_sudo_keepalive
+
+phase_run preflight          true   # already done above — mark it
+phase_run base_system        do_base_system
+phase_run aur_helper         do_aur_helper
+phase_run gpu_drivers        do_gpu_drivers
+phase_run zsh                do_zsh
+phase_run services           do_services
+phase_run packages           do_packages
+phase_run finalize           do_finalize
+
+print_report
