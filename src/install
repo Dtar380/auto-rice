@@ -168,7 +168,7 @@ phase_run() {
 # =============================================================================
 #  PHASE: PREFLIGHT
 # =============================================================================
-preflight() {
+do_preflight() {
     local errors=0
 
     # --- Check: Arch Linux only ---
@@ -272,7 +272,7 @@ preflight() {
 # =============================================================================
 #  PHASE: BASE SYSTEM
 # =============================================================================
-base_system() {
+do_base_system() {
     # Update the system
     log_info "Updating system..."
     sudo pacman -Syu --noconfirm
@@ -316,7 +316,7 @@ base_system() {
 # =============================================================================
 #  PHASE: AUR HELPER
 # =============================================================================
-aur_helper() {
+do_aur_helper() {
     # --- Check: Is it already installed? ---
     if command -v paru &>/dev/null; then
         log_ok "Paru is already installed"
@@ -337,7 +337,7 @@ aur_helper() {
 # =============================================================================
 #  PHASE: GPU DRIVERS
 # =============================================================================
-gpu_drivers() {
+do_gpu_drivers() {
     log_info "Detecting GPU hardware..."
 
     mapfile -t ALL_GPUS < <(lspci -mm | grep -E '"VGA|"3D' | tr -d '"' || true)
@@ -443,7 +443,7 @@ gpu_drivers() {
 # =============================================================================
 #  PHASE: ZSH
 # =============================================================================
-zsh_shell() {
+do_zsh_shell() {
     # Install if not installed
     if ! command -v zsh &>/dev/null; then
         sudo pacman -S zsh
@@ -529,7 +529,7 @@ do_services() {
 # =============================================================================
 #  PHASE: PACKAGE INSTALL
 # =============================================================================
-packages() {
+do_packages() {
     log_info "Reading package list from $PACKAGE_LIST..."
 
     mapfile -t PACKAGES < <(grep -Ev '^\s*#|^\s*$' "$PACKAGE_LIST" | sed 's/\s*#.*//' | tr -s ' ' '\n' | grep -v '^$')
@@ -574,10 +574,74 @@ packages() {
 # =============================================================================
 #  PHASE: FINALIZE
 # =============================================================================
+do_finalize() {
+
+}
 
 # =============================================================================
 #  POST-INSTALL VERIFICATION REPORT
 # =============================================================================
+print_report() {
+    echo
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  INSTALLATION REPORT"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    # Phase summary
+    echo
+    echo "  Phases:"
+    for phase in "${PHASES[@]}"; do
+        if phase_is_done "$phase"; then
+            echo -e "    \e[32m[✓]\e[0m $phase"
+        elif [[ " ${SKIPPED_PHASES[*]} " =~ " $phase " ]]; then
+            echo -e "    \e[34m[→]\e[0m $phase (skipped — already done)"
+        else
+            echo -e "    \e[31m[✗]\e[0m $phase (not completed)"
+        fi
+    done
+
+    # Failed packages
+    echo
+    if [[ "${#FAILED_PACKAGES[@]}" -eq 0 ]]; then
+        echo -e "  Packages:   \e[32mAll installed\e[0m"
+    else
+        echo -e "  Packages:   \e[31m${#FAILED_PACKAGES[@]} failed\e[0m"
+        for pkg in "${FAILED_PACKAGES[@]}"; do
+            echo "    - $pkg"
+        done
+        echo
+        echo "  Retry with:"
+        echo "    yay -S --needed ${FAILED_PACKAGES[*]}"
+    fi
+
+    # Failed services
+    echo
+    if [[ "${#FAILED_SERVICES[@]}" -eq 0 ]]; then
+        echo -e "  Services:   \e[32mAll enabled\e[0m"
+    else
+        echo -e "  Services:   \e[33m${#FAILED_SERVICES[@]} issue(s)\e[0m"
+        for svc in "${FAILED_SERVICES[@]}"; do
+            echo "    - $svc"
+        done
+    fi
+
+    echo
+    echo "  Log file:   $LOG_FILE"
+    echo "  State file: $STATE_FILE"
+    if [[ -d "$BACKUP_DIR" ]]; then
+        echo "  Backups:    $BACKUP_DIR"
+    fi
+    echo "  Rice dir:   $RICE_DIR"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    log_ok "Installation complete! Please reboot your system."
+
+    read -rp "  Reboot now? [y/N]: " reboot_now
+    if [[ "$reboot_now" =~ ^[Yy]$ ]]; then
+        _cleanup
+        sudo reboot
+    fi
+}
 
 # =============================================================================
 #  ARGUMENT PARSING
