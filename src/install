@@ -337,6 +337,108 @@ aur_helper() {
 # =============================================================================
 #  PHASE: GPU DRIVERS
 # =============================================================================
+gpu_drivers() {
+    log_info "Detecting GPU hardware..."
+
+    mapfile -t ALL_GPUS < <(lspci -mm | grep -E '"VGA|"3D' | tr -d '"' || true)
+    local GPU_COUNT=${#ALL_GPUS[@]}
+    local SELECTED_GPU=""
+
+    # --- Check: Found GPUs ---
+    if [[ "$GPU_COUNT" -eq 0 ]]; then
+        log_warn "No GPU hardware detected via lspci."
+        read -rp "Continue with generic Mesa fallback? [y/N]: " fallback_confirm
+        if [[ ! "$fallback_confirm" =~ ^[Yy]$ ]]; then
+            log_error "GPU detection failed and user chose not to continue. Aborting."
+            exit 1
+        fi
+        log_info "Installing generic Mesa fallback..."
+        sudo pacman -S --needed --noconfirm mesa
+        log_ok "Generic Mesa installed."
+        return
+    elif [[ "$GPU_COUNT" -eq 1 ]]; then
+        SELECTED_GPU="${ALL_GPUS[0]}"
+        log_ok "Single GPU detected."
+    else
+        log_info "Multiple GPUs detected:"
+        echo "-------------------------------------------------------"
+        for i in "${!ALL_GPUS[@]}"; do
+            local gpu_name tag
+            gpu_name=$(echo "${ALL_GPUS[$i]}" | cut -d' ' -f4-)
+            if [[ "${ALL_GPUS[$i]}" =~ ^00:0[12]\. ]]; then
+                tag="[INTEGRATED]"
+            else
+                tag="[DEDICATED] "
+            fi
+            echo "  $((i+1))) $tag $gpu_name"
+        done
+        echo "-------------------------------------------------------"
+
+        # Validated input loop
+        local choice
+        while true; do
+            read -rp "Select your primary GPU number [1-${GPU_COUNT}]: " choice
+            if [[ "$choice" =~ ^[0-9]+$ ]] && \
+               [[ "$choice" -ge 1 ]] && \
+               [[ "$choice" -le "$GPU_COUNT" ]]; then
+                break
+            fi
+            log_warn "Invalid selection '$choice'. Please enter a number between 1 and ${GPU_COUNT}."
+        done
+        SELECTED_GPU="${ALL_GPUS[$((choice-1))]}"
+    fi
+
+    # Confirm before installing
+    local selected_name
+    selected_name=$(echo "$SELECTED_GPU" | cut -d' ' -f4-)
+    echo
+    log_info "Selected GPU: $selected_name"
+    read -rp "Install drivers for this GPU? [Y/n]: " gpu_confirm
+    if [[ "$gpu_confirm" =~ ^[Nn]$ ]]; then
+        log_warn "GPU driver installation skipped by user."
+        return
+    fi
+
+    local gpu_lower
+    gpu_lower=$(echo "$SELECTED_GPU" | tr '[:upper:]' '[:lower:]')
+
+    case "$gpu_lower" in
+        *nvidia*)
+            log_warn "Note: nvidia-open-dkms requires Turing (RTX 20xx) or newer."
+            log_warn "If you have an older card (GTX 10xx or earlier), you may need 'nvidia-dkms' instead."
+            read -rp "Continue with nvidia-open-dkms? [Y/n]: " nv_confirm
+            if [[ "$nv_confirm" =~ ^[Nn]$ ]]; then
+                log_info "Skipping NVIDIA driver installation."
+                return
+            fi
+            log_info "Installing NVIDIA drivers (nvidia-open-dkms)..."
+            sudo pacman -S --needed --noconfirm \
+                nvidia-open-dkms nvidia-utils lib32-nvidia-utils nvidia-settings egl-wayland
+            log_info "Configuring NVIDIA for Wayland (modeset)..."
+            echo "options nvidia_drm modeset=1 fbdev=1" | sudo tee /etc/modprobe.d/nvidia.conf >/dev/null
+            sudo modprobe nvidia_drm || log_warn "Could not modprobe nvidia_drm (will take effect on next boot)."
+            log_ok "NVIDIA drivers configured."
+            ;;
+        *amd*|*radeon*)
+            log_info "Installing AMD drivers (Mesa/open source)..."
+            sudo pacman -S --needed --noconfirm \
+                mesa xf86-video-amdgpu libva-mesa-driver vulkan-radeon lib32-mesa lib32-vulkan-radeon
+            log_ok "AMD drivers installed."
+            ;;
+        *intel*)
+            log_info "Installing Intel drivers (Mesa/open source)..."
+            sudo pacman -S --needed --noconfirm \
+                mesa intel-media-driver libva-intel-driver vulkan-intel lib32-mesa
+            log_ok "Intel drivers installed."
+            ;;
+        *)
+            log_warn "Could not identify GPU vendor for: $selected_name"
+            log_info "Installing generic Mesa as fallback..."
+            sudo pacman -S --needed --noconfirm mesa
+            log_ok "Generic Mesa installed."
+            ;;
+    esac
+}
 
 # =============================================================================
 #  PHASE: ZSH
