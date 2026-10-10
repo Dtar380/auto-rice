@@ -529,6 +529,35 @@ do_services() {
 # =============================================================================
 #  PHASE: PACKAGE INSTALL
 # =============================================================================
+packages() {
+    log_info "Reading package list from $PACKAGE_LIST..."
+
+    mapfile -t PACKAGES < <(grep -Ev '^\s*#|^\s*$' "$PACKAGE_LIST" | sed 's/\s*#.*//' | tr -s ' ' '\n' | grep -v '^$')
+
+    local total="${#PACKAGES[@]}"
+    log_info "Installing $total packages..."
+
+    for pkg in "${PACKAGES[@]}"; do
+        log_info "  Installing: $pkg"
+        if ! paru -S --needed --noconfirm "$pkg" 2>&1; then
+            log_error "  Failed installing: $pkg"
+            FAILED_PACKAGES+=("$pkg")
+        else
+            log_ok "  Success installing: $pkg"
+        fi
+    done
+
+    if [[ "${#FAILED_PACKAGES[@]}" -gt 0 ]]; then
+        log_warn "The following packages could not be installed:"
+        for pkg in "${FAILED_PACKAGES[@]}"; do
+            echo "    - $pkg"
+        done
+        log_warn "You can retry them manually with:"
+        echo "    paru -S --needed ${FAILED_PACKAGES[*]}"
+    else
+        log_ok "All packages installed successfully."
+    fi
+}
 
 # =============================================================================
 #  PHASE: DOTFILES
