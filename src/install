@@ -324,15 +324,18 @@ aur_helper() {
     fi
 
     # Install paru
-    git clone https://aur.archlinux.or/paru.git /tmp/paru
-    pushd /tmp/paru > /dev/null
+    log_info "Installing paru AUR helper..."
+    local paru_build_dir="/tmp/paru-build-$$"
+    git clone https://aur.archlinux.or/paru.git "$paru_build_dir"
+    pushd "$paru_build_dir" > /dev/null
     makepkg -si --noconfirm
     popd > /dev/null
-    rm -rf /tmp/paru
+    rm -rf "$paru_build_dir"
+    log_ok "paru installed."
 }
 
 # =============================================================================
-#  PHASE: SERVICES
+#  PHASE: GPU DRIVERS
 # =============================================================================
 
 # =============================================================================
@@ -357,15 +360,76 @@ zsh_shell() {
 }
 
 # =============================================================================
+#  PHASE: SERVICES
+# =============================================================================
+_unit_exists() {
+    systemctl list-unit-files --full --no-legend "$1" 2>/dev/null | grep -q "$1"
+}
+
+_enable_system_service() {
+    local unit="$1"
+    if ! _unit_exists "$unit"; then
+        log_warn "System unit '$unit' not found, skipping."
+        FAILED_SERVICES+=("$unit (not found)")
+        return
+    fi
+    if sudo systemctl enable --now "$unit"; then
+        if sudo systemctl is-active --quiet "$unit"; then
+            log_ok "Service '$unit' enabled and active."
+        else
+            log_warn "Service '$unit' enabled but not yet active (may require reboot)."
+        fi
+    else
+        log_warn "Failed to enable service '$unit'."
+        FAILED_SERVICES+=("$unit")
+    fi
+}
+
+_enable_user_service() {
+    local unit="$1"
+    if systemctl --user enable --now "$unit" 2>/dev/null; then
+        log_ok "User service '$unit' enabled."
+    else
+        log_warn "Failed to enable user service '$unit'. May require a graphical session or reboot."
+        FAILED_SERVICES+=("user:$unit")
+    fi
+}
+
+do_services() {
+    log_info "Installing service packages..."
+    sudo pacman -S --needed --noconfirm \
+        networkmanager network-manager-applet \
+        bluez bluez-utils bluetui \
+        pipewire pipewire-pulse wireplumber pavucontrol
+    log_ok "Service packages installed."
+
+    log_info "Enabling services..."
+
+    # NetworkManager
+    _enable_system_service NetworkManager
+
+    # Bluetooth — only if hardware is present
+    if rfkill list bluetooth &>/dev/null || lsusb 2>/dev/null | grep -qi bluetooth || \
+       lspci 2>/dev/null | grep -qi bluetooth; then
+        _enable_system_service bluetooth
+    else
+        log_info "No Bluetooth hardware detected, skipping bluetooth service."
+    fi
+
+    # PipeWire user services
+    _enable_user_service pipewire
+    _enable_user_service pipewire-pulse
+    _enable_user_service wireplumber
+
+    log_ok "Service configuration complete."
+}
+
+# =============================================================================
 #  PHASE: PACKAGE INSTALL
 # =============================================================================
 
 # =============================================================================
-#  PHASE: CONFIGS
-# =============================================================================
-
-# =============================================================================
-#  PHASE: KEYBOARD
+#  PHASE: DOTFILES
 # =============================================================================
 
 # =============================================================================
@@ -373,5 +437,21 @@ zsh_shell() {
 # =============================================================================
 
 # =============================================================================
-#  PHASE: FINISH
+#  PHASE: HYPRLAND KEYBOARD
+# =============================================================================
+
+# =============================================================================
+#  PHASE: FINALIZE
+# =============================================================================
+
+# =============================================================================
+#  POST-INSTALL VERIFICATION REPORT
+# =============================================================================
+
+# =============================================================================
+#  ARGUMENT PARSING
+# =============================================================================
+
+# =============================================================================
+#  MAIN
 # =============================================================================
