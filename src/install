@@ -582,7 +582,43 @@ do_packages() {
 #  PHASE: FINALIZE
 # =============================================================================
 do_finalize() {
+    # Create standard user directories
+    if command -v xdg-user-dirs-update; then
+        log_info "Creating user directories..."
+        xdg-user-dirs-update
+        log_ok "User directories created."
+    else
+        log_warn "User directories couldn't be created."
+    fi
 
+    # Safe cleanup: only remove installer temp files and yay build cache
+    log_info "Cleaning up installer temp files..."
+    rm -rf /tmp/yay-build-*
+    yay -Sc --noconfirm 2>/dev/null || true
+    # NOTE: We deliberately do NOT wipe $HOME/.cache — that would destroy
+    # unrelated application state the user may want to keep.
+    log_ok "Cleanup complete (user cache left intact)."
+
+    # SDDM display manager
+    if command -v sddm &>/dev/null; then
+        log_info "Enabling SDDM display manager..."
+        # Try both possible unit names
+        if _unit_exists "sddm.service" 2>/dev/null || _unit_exists "sddm" 2>/dev/null; then
+            sudo systemctl enable sddm.service 2>/dev/null || sudo systemctl enable sddm 2>/dev/null || true
+            if sudo systemctl is-enabled sddm &>/dev/null || sudo systemctl is-enabled sddm.service &>/dev/null; then
+                log_ok "SDDM enabled successfully. Reestart the system to apply changes."
+            else
+                log_warn "SDDM may not be properly enabled. Try: sudo systemctl enable sddm"
+            fi
+        else
+            log_warn "SDDM service unit not found."
+        fi
+    else
+        log_warn "SDDM not installed — display manager not enabled."
+        log_warn "Add 'sddm' to packages.txt if you want a graphical login screen."
+    fi
+
+    log_ok "Finalization complete."
 }
 
 # =============================================================================
