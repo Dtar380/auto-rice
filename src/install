@@ -769,7 +769,7 @@ do_finalize() {
         if _unit_exists "sddm.service" 2>/dev/null || _unit_exists "sddm" 2>/dev/null; then
             sudo systemctl enable sddm.service 2>/dev/null || sudo systemctl enable sddm 2>/dev/null || true
             if sudo systemctl is-enabled sddm &>/dev/null || sudo systemctl is-enabled sddm.service &>/dev/null; then
-                log_ok "SDDM enabled successfully. Reestart the system to apply changes."
+                log_ok "SDDM enabled successfully. Restart the system to apply changes."
             else
                 log_warn "SDDM may not be properly enabled. Try: sudo systemctl enable sddm"
             fi
