@@ -450,7 +450,7 @@ do_gpu_drivers() {
 # =============================================================================
 #  PHASE: ZSH
 # =============================================================================
-do_zsh_shell() {
+do_zsh() {
     # Install if not installed
     if ! command -v zsh &>/dev/null; then
         sudo pacman -S zsh
@@ -755,7 +755,7 @@ phase_run gpu_drivers        do_gpu_drivers
 phase_run zsh                do_zsh
 phase_run services           do_services
 phase_run packages           do_packages
-phase_run kayboard           do_keyboard
+phase_run keyboard           do_keyboard
 phase_run finalize           do_finalize
 
 print_report
