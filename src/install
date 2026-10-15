@@ -569,10 +569,113 @@ do_packages() {
 # =============================================================================
 #  PHASE: DOTFILES
 # =============================================================================
+_sync_dir() {
+    local label="$1"
+    local src_dir="$2"
+    local dest_dir="$3"
+
+    if [[ ! -d "$src_dir" ]]; then
+        log_warn "'$src_dir' not found, skipping $label sync."
+        return
+    fi
+
+    mkdir -p "$dest_dir"
+    log_info "Syncing $label: $src_dir → $dest_dir"
+    # --backup-dir keeps dated backups of anything overwritten
+    rsync -av \
+        --backup \
+        --backup-dir="$BACKUP_DIR/$label" \
+        "$src_dir/" "$dest_dir/"
+    log_ok "$label sync complete."
+}
+
+do_dotfiles() {
+    mkdir -p "$HOME/.config" "$HOME/.local/bin" "$HOME/.local/share"
+    mkdir -p "$BACKUP_DIR"
+
+    # 1. Sync configuration folders from dotfiles/ directly to ~/.config/
+    if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
+        shopt -s nullglob
+        for folder in "$SCRIPT_DIR/dotfiles"/*/; do
+            local app
+            app=$(basename "$folder")
+            _sync_dir "config/$app" "$folder" "$HOME/.config/$app"
+        done
+        shopt -u nullglob
+    else
+        log_warn "'dotfiles' directory not found, skipping config sync."
+    fi
+
+    # 2. Sync utility scripts from root bin/ directory to ~/.local/bin/
+    _sync_dir "bin" "$SCRIPT_DIR/bin" "$HOME/.local/bin"
+
+    # 3. Make all scripts in ~/.local/bin executable
+    log_info "Making scripts executable..."
+    find "$HOME/.local/bin" -maxdepth 1 -type f \( -name "rice-*" -o -name "*.zsh" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
+    log_ok "Scripts permissions updated."
+
+    # 4. Backup summary report
+    if [[ -d "$BACKUP_DIR" ]] && [[ -n "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
+        log_info "Backups of overwritten files saved to: $BACKUP_DIR"
+    fi
+
+    log_ok "Dotfiles installation complete."
+}
 
 # =============================================================================
 #  PHASE: RICE SETUP
 # =============================================================================
+do_rice_setup() {
+    log_info "Setting up Rice themes and wallpaper infrastructure..."
+
+    local themes_dir="$RICE_DIR/themes"
+    local wallpapers_dir="$RICE_DIR/wallpapers"
+
+    # 1. Create standard folder skeleton
+    mkdir -p "$themes_dir" "$wallpapers_dir"
+
+    # 2. Populate default assets if they exist in your repo
+    if [[ -d "$SCRIPT_DIR/assets/themes" ]]; then
+        cp -rn "$SCRIPT_DIR/assets/themes/"* "$themes_dir/" 2>/dev/null || true
+    fi
+    if [[ -d "$SCRIPT_DIR/assets/wallpapers" ]]; then
+        cp -rn "$SCRIPT_DIR/assets/wallpapers/"* "$wallpapers_dir/" 2>/dev/null || true
+    fi
+
+    # 3. Set a default active theme (e.g., 'catppuccin')
+    local default_theme="catppuccin"
+    local active_theme_link="$RICE_DIR/current_theme"
+    local active_wallpaper_link="$RICE_DIR/current_wallpaper"
+
+    if [[ ! -e "$active_theme_link" ]] && [[ -d "$themes_dir/$default_theme" ]]; then
+        ln -sfn "$themes_dir/$default_theme" "$active_theme_link"
+        log_ok "Set default active theme to: $default_theme"
+    fi
+
+    # 4. Automatically link the theme's matching default wallpaper using metadata.json
+    local metadata_file="$themes_dir/$default_theme/metadata.json"
+    if [[ -f "$metadata_file" ]] && command -v jq &>/dev/null; then
+        local default_wp
+        default_wp=$(jq -r '.default_wallpaper // empty' "$metadata_file")
+
+        if [[ -n "$default_wp" ]] && [[ -f "$wallpapers_dir/$default_wp" ]]; then
+            ln -sfn "$wallpapers_dir/$default_wp" "$active_wallpaper_link"
+            log_ok "Set default matching wallpaper: $default_wp"
+        else
+            log_warn "Default wallpaper specified in metadata not found in global pool."
+        fi
+    else
+        # Fallback: grab the first available image if metadata isn't parsed
+        local first_wallpaper
+        first_wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -n 1)
+        if [[ -n "$first_wallpaper" ]]; then
+            ln -sfn "$first_wallpaper" "$active_wallpaper_link"
+            log_ok "Set fallback active wallpaper."
+        fi
+    fi
+
+    log_ok "Rice state architecture initialized at $RICE_DIR"
+}
 
 # =============================================================================
 #  PHASE: HYPRLAND KEYBOARD
