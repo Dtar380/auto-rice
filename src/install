@@ -13,24 +13,24 @@ set -euo pipefail
 # =============================================================================
 #  CONSTANTS & GLOBAL STATE
 # =============================================================================
-## VERSION
+# Version
 readonly SCRIPT_VERSION="0.0.1"
 
-## RUNNING
+# Runtime paths
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly LOG_FILE="$SCRIPT_DIR/install-$(date +%Y%m%d-%H%M%S).log"
 readonly SUDO_KEEPALIVE_PID_FILE="/tmp/rice_sudo_keepalive.pid"
 readonly STATE_FILE="$SCRIPT_DIR/.install_state"
-readonly PACKAGE_LIST="$SCRIPT_DIR/packages.txt"
+readonly PACKAGE_FILE="$SCRIPT_DIR/packages.txt"
 
-## RICE
+# Rice paths
 readonly RICE_DIR="$HOME/.local/share/rice"
 readonly BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d-%H%M%S)"
 
-## REQUIREMENTS
+# Requirements
 readonly MIN_DISK_MB=8192
 
-## PHASES - order matters for resume
+# Phases (order matters for resume)
 readonly -a PHASES=(
     preflight
     base_system
@@ -45,10 +45,10 @@ readonly -a PHASES=(
     finalize
 )
 
-## INSTALLER MODE (set from CLI args)
+# Installer mode (set from CLI args)
 MODE="run"
 
-## COUNTERS FOR REPORT
+# Report trackers
 FAILED_PACKAGES=()
 FAILED_SERVICES=()
 SKIPPED_PHASES=()
@@ -56,7 +56,7 @@ SKIPPED_PHASES=()
 # =============================================================================
 #  LOGGER
 # =============================================================================
-# All output goes to stdout AND the log file
+# Send all output to stdout and the log file
 exec > >(tee -i "$LOG_FILE") 2>&1
 
 _log() {
@@ -64,11 +64,11 @@ _log() {
     local symbol color reset;
     reset="\e[0m"
     case "$level" in
-        INFO)  symbol="[→]"; color="\e[34m";; # blue
-        OK)    symbol="[✓]"; color="\e[32m";; # green
-        WARN)  symbol="[!]"; color="\e[33m";; # yellow
-        ERROR) symbol="[x]"; color="\e[31m";; # red
-        STEP)  symbol="[▶]"; color="\e[36m";; # cyan
+        INFO)  symbol="[→]"; color="\e[34m";; # Blue
+        OK)    symbol="[✓]"; color="\e[32m";; # Green
+        WARN)  symbol="[!]"; color="\e[33m";; # Yellow
+        ERROR) symbol="[x]"; color="\e[31m";; # Red
+        STEP)  symbol="[▶]"; color="\e[36m";; # Cyan
     esac
     echo -e "${color}${symbol} $*${reset}"
 }
@@ -83,26 +83,26 @@ log_step()  { echo; _log STEP "=== $* ==="; }
 #  SUDO KEEPALIVE
 # =============================================================================
 _start_sudo_keepalive() {
-    # 1. Bail early if PID file path is not set
+    # Bail early if the PID file path is not set
     if [[ -z "$SUDO_KEEPALIVE_PID_FILE" ]]; then
         log_error "SUDO_KEEPALIVE_PID_FILE is not set."
         return 1
     fi
 
-    # 2. Fail fast if sudo auth fails
+    # Fail fast if sudo auth fails
     if ! sudo -v; then
         log_error "Failed to obtain sudo credentials."
         return 1
     fi
 
-    # 3. Kill orphaned keepalive from a previous run, if any
+    # Kill orphaned keepalive from a previous run, if any
     if [[ -f "$SUDO_KEEPALIVE_PID_FILE" ]]; then
         local old_pid
         old_pid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
         [[ -n "$old_pid" ]] && kill "$old_pid" 2>/dev/null || true
     fi
 
-    # 4. Grant passwordless sudo
+    # Grant passwordless sudo
     local sudoers_drop="/etc/sudoers.d/rice-installer"
     local target_user
     target_user="$(id -un)"
@@ -120,10 +120,10 @@ _start_sudo_keepalive() {
         rm -f "$tmp_sudoers"
     fi
 
-    # 5. Exit the loop if the parent process ($$) dies
+    # Exit the loop if the parent process ($$) dies
     (
         while kill -0 "$$" 2>/dev/null; do
-            sleep 50                              # Sleep FIRST, shorter than 60s
+            sleep 50                              # Sleep first, shorter than 60s
             sudo -n true </dev/null 2>/dev/null  # Redirect stdin/stderr to prevent prompts
         done
     ) &
@@ -135,7 +135,7 @@ _start_sudo_keepalive() {
 }
 
 # =============================================================================
-#  TRAP: ERROR + CLEANUP
+#  TRAP: ERROR & CLEANUP
 # =============================================================================
 _on_error() {
     local exit_code=$?
@@ -150,10 +150,10 @@ _on_error() {
 _cleanup() {
     # Stop sudo keepalive background process if running
     if [[ -f "$SUDO_KEEPALIVE_PID_FILE" ]]; then
-        local kpid
-        kpid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
-        if [[ -n "$kpid" ]] && kill -0 "$kpid" 2>/dev/null; then
-            kill "$kpid" 2>/dev/null || true
+        local keepalive_pid
+        keepalive_pid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
+        if [[ -n "$keepalive_pid" ]] && kill -0 "$keepalive_pid" 2>/dev/null; then
+            kill "$keepalive_pid" 2>/dev/null || true
         fi
         rm -f "$SUDO_KEEPALIVE_PID_FILE"
     fi
@@ -198,7 +198,7 @@ phase_run() {
 do_preflight() {
     local errors=0
 
-    # --- Check: Arch Linux only ---
+    # Check for Arch Linux
     if [[ ! -f /etc/arch-release ]]; then
         log_error "This installer is for Arch Linux only. /etc/arch-release not found."
         (( errors++ ))
@@ -206,7 +206,7 @@ do_preflight() {
         log_ok "Arch Linux detected."
     fi
 
-    # --- Check: not running as root ---
+    # Check not running as root
     if [[[ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]]]; then
         log_error "Do not run this script as root. RUn it as your normal user"
         (( errors++ ))
@@ -214,7 +214,7 @@ do_preflight() {
         log_ok "Not running as root."
     fi
 
-    # --- Check: sudo available and works ---
+    # Check sudo is available and working
     if ! command -v sudo &>/dev/null; then
         log_error "sudo not found. Install it first: pacman -S sudo"
         (( errors++ ))
@@ -225,25 +225,25 @@ do_preflight() {
         log_ok "sudo is available and working."
     fi
 
-    # --- Check: packages.txt readable with at least one package ---
-    if [[ ! -f "$PACKAGE_LIST" ]]; then
-        log_error "Package list not found: $PACKAGE_LIST"
+    # Check packages.txt is readable and has at least one package
+    if [[ ! -f "$PACKAGE_FILE" ]]; then
+        log_error "Package list not found: $PACKAGE_FILE"
         (( errors++ ))
-    elif [[ ! -r "$PACKAGE_LIST" ]]; then
-        log_error "Package list is not readable: $PACKAGE_LIST"
+    elif [[ ! -r "$PACKAGE_FILE" ]]; then
+        log_error "Package list is not readable: $PACKAGE_FILE"
         (( errors++ ))
     else
         local pkg_count
-        pkg_count=$(grep -Evc '^\s*#|^\s*$' "$PACKAGE_LIST" || true)
+        pkg_count=$(grep -Evc '^\s*#|^\s*$' "$PACKAGE_FILE" || true)
         if [[ "$pkg_count" -lt 1 ]]; then
-            log_error "Package list '$PACKAGE_LIST' has no valid packages."
+            log_error "Package list '$PACKAGE_FILE' has no valid packages."
             (( errors++ ))
         else
             log_ok "Package list found with ${pkg_count} packages."
         fi
     fi
 
-    # --- Check: internet connectivity ---
+    # Check internet connectivity
     if [ ping -c "ping.archlinux.org" > /dev/null 2>&1 ]; then
         log_error "No internet connection (archlinux.org unreachable)."
         (( errors++ ))
@@ -251,7 +251,7 @@ do_preflight() {
         log_ok "Internet connection available."
     fi
 
-    # --- Check: free disk space ---
+    # Check free disk space
     local free_mb
     free_mb=$(df -m / | awk 'NR==2{print $4}')
     if [[ "$free_mb" -lt "$MIN_DISK_MB" ]]; then
@@ -261,7 +261,7 @@ do_preflight() {
         log_ok "Disk space OK: ${free_mb}MB free."
     fi
 
-    # --- Check: required tools exist ---
+    # Check required tools exist
     local required_tools=(git lspci localectl pacman)
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" &>/dev/null; then
@@ -273,14 +273,14 @@ do_preflight() {
         log_ok "Required tools check passed."
     fi
 
-    # --- Check: script is being run from its own directory ---
+    # Check script is run from its own directory
     if [[ "$SCRIPT_DIR" != "$(pwd)" ]]; then
         log_warn "Script is not being run from its own directory."
         log_warn "Expected: $SCRIPT_DIR — Got: $(pwd)"
         log_warn "Relative paths (dotfiles/, packages.txt) may not resolve correctly."
     fi
 
-    # --- Check: Number of errors encountered ---
+    # Check the error count
     if [[ "$errors" -gt 0 ]]; then
         log_error "Preflight failed with $errors error(s). Fix the issues above and re-run."
         exit 1
@@ -317,26 +317,26 @@ do_base_system() {
     fi
 
     # Detect kernel package (handle multiple kernels: pick the first running one)
-    local KERNEL_TYPE=$(uname -r | sed -E 's/^[0-9.]+-//; s/[0-9].*//; s/-$//')
-    local HEADER_PKG=""
-    if [[ -n "$KERNEL_TYPE" && "$KERNEL_TYPE" != "arch" ]]; then
-        HEADER_PKG="linux-${KERNEL_TYPE}-headers"
+    local kernel_type=$(uname -r | sed -E 's/^[0-9.]+-//; s/[0-9].*//; s/-$//')
+    local header_pkg=""
+    if [[ -n "$kernel_type" && "$kernel_type" != "arch" ]]; then
+        header_pkg="linux-${kernel_type}-headers"
     else
-        HEADER_PKG="linux-headers"
+        header_pkg="linux-headers"
     fi
 
-    if [[ -z "$KERNEL_TYPE" ]]; then
+    if [[ -z "$kernel_type" ]]; then
         log_warn "Could not detect kernel package. Skipping headers installation."
     else
-        log_info "Detected kernel: $KERNEL_TYPE"
+        log_info "Detected kernel: $kernel_type"
     fi
 
     # Install headers and basic packages
     log_info "Installing base dependencies..."
-    local BASE_PACKAGES=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
-    [[ -n "$HEADER_PKG" ]] && BASE_PACKAGES+=("$HEADER_PKG")
+    local base_packages=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
+    [[ -n "$header_pkg" ]] && base_packages+=("$header_pkg")
 
-    sudo pacman -S --needed --noconfirm "${BASE_PACKAGES[@]}"
+    sudo pacman -S --needed --noconfirm "${base_packages[@]}"
     log_ok "Base dependencies installed."
 }
 
@@ -344,7 +344,7 @@ do_base_system() {
 #  PHASE: AUR HELPER
 # =============================================================================
 do_aur_helper() {
-    # --- Check: Is it already installed? ---
+    # Check if already installed
     if command -v paru &>/dev/null; then
         log_ok "Paru is already installed"
         return 0
@@ -367,12 +367,12 @@ do_aur_helper() {
 do_gpu_drivers() {
     log_info "Detecting GPU hardware..."
 
-    mapfile -t ALL_GPUS < <(lspci -mm | grep -E '"VGA|"3D' | tr -d '"' || true)
-    local GPU_COUNT=${#ALL_GPUS[@]}
-    local SELECTED_GPU=""
+    mapfile -t all_gpus < <(lspci -mm | grep -E '"VGA|"3D' | tr -d '"' || true)
+    local gpu_count=${#all_gpus[@]}
+    local selected_gpu=""
 
-    # --- Check: Found GPUs ---
-    if [[ "$GPU_COUNT" -eq 0 ]]; then
+    # Check how many GPUs were found
+    if [[ "$gpu_count" -eq 0 ]]; then
         log_warn "No GPU hardware detected via lspci."
         read -rp "Continue with generic Mesa fallback? [y/N]: " fallback_confirm
         if [[ ! "$fallback_confirm" =~ ^[Yy]$ ]]; then
@@ -383,16 +383,16 @@ do_gpu_drivers() {
         sudo pacman -S --needed --noconfirm mesa
         log_ok "Generic Mesa installed."
         return
-    elif [[ "$GPU_COUNT" -eq 1 ]]; then
-        SELECTED_GPU="${ALL_GPUS[0]}"
+    elif [[ "$gpu_count" -eq 1 ]]; then
+        selected_gpu="${all_gpus[0]}"
         log_ok "Single GPU detected."
     else
         log_info "Multiple GPUs detected:"
         echo "-------------------------------------------------------"
-        for i in "${!ALL_GPUS[@]}"; do
+        for i in "${!all_gpus[@]}"; do
             local gpu_name tag
-            gpu_name=$(echo "${ALL_GPUS[$i]}" | cut -d' ' -f4-)
-            if [[ "${ALL_GPUS[$i]}" =~ ^00:0[12]\. ]]; then
+            gpu_name=$(echo "${all_gpus[$i]}" | cut -d' ' -f4-)
+            if [[ "${all_gpus[$i]}" =~ ^00:0[12]\. ]]; then
                 tag="[INTEGRATED]"
             else
                 tag="[DEDICATED] "
@@ -401,23 +401,23 @@ do_gpu_drivers() {
         done
         echo "-------------------------------------------------------"
 
-        # Validated input loop
+        # Loop until a valid selection is made
         local choice
         while true; do
-            read -rp "Select your primary GPU number [1-${GPU_COUNT}]: " choice
+            read -rp "Select your primary GPU number [1-${gpu_count}]: " choice
             if [[ "$choice" =~ ^[0-9]+$ ]] && \
                [[ "$choice" -ge 1 ]] && \
-               [[ "$choice" -le "$GPU_COUNT" ]]; then
+               [[ "$choice" -le "$gpu_count" ]]; then
                 break
             fi
-            log_warn "Invalid selection '$choice'. Please enter a number between 1 and ${GPU_COUNT}."
+            log_warn "Invalid selection '$choice'. Please enter a number between 1 and ${gpu_count}."
         done
-        SELECTED_GPU="${ALL_GPUS[$((choice-1))]}"
+        selected_gpu="${all_gpus[$((choice-1))]}"
     fi
 
     # Confirm before installing
     local selected_name
-    selected_name=$(echo "$SELECTED_GPU" | cut -d' ' -f4-)
+    selected_name=$(echo "$selected_gpu" | cut -d' ' -f4-)
     echo
     log_info "Selected GPU: $selected_name"
     read -rp "Install drivers for this GPU? [Y/n]: " gpu_confirm
@@ -427,14 +427,14 @@ do_gpu_drivers() {
     fi
 
     local gpu_lower
-    gpu_lower=$(echo "$SELECTED_GPU" | tr '[:upper:]' '[:lower:]')
+    gpu_lower=$(echo "$selected_gpu" | tr '[:upper:]' '[:lower:]')
 
     case "$gpu_lower" in
         *nvidia*)
             log_warn "Note: nvidia-open-dkms requires Turing (RTX 20xx) or newer."
             log_warn "If you have an older card (GTX 10xx or earlier), you may need 'nvidia-dkms' instead."
-            read -rp "Continue with nvidia-open-dkms? [Y/n]: " nv_confirm
-            if [[ "$nv_confirm" =~ ^[Nn]$ ]]; then
+            read -rp "Continue with nvidia-open-dkms? [Y/n]: " nvidia_confirm
+            if [[ "$nvidia_confirm" =~ ^[Nn]$ ]]; then
                 log_info "Skipping NVIDIA driver installation."
                 return
             fi
@@ -479,10 +479,10 @@ do_zsh() {
     fi
 
     # Set as default shell if not set
-    local CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
-    local ZSH_PATH=$(which zsh)
-    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
-        sudo cshs -s "$ZSH_PATH" "$USER"
+    local current_shell=$(getent passwd "$USER" | cut -d: -f7)
+    local zsh_path=$(which zsh)
+    if [ "$current_shell" != "$zsh_path" ]; then
+        sudo cshs -s "$zsh_path" "$USER"
     else
         log_ok "ZSH was already set as default shell"
     fi
@@ -534,10 +534,10 @@ do_services() {
 
     log_info "Enabling services..."
 
-    # NetworkManager
+    # Enable NetworkManager
     _enable_system_service NetworkManager
 
-    # Bluetooth — only if hardware is present
+    # Enable bluetooth only if hardware is present
     if rfkill list bluetooth &>/dev/null || lsusb 2>/dev/null | grep -qi bluetooth || \
        lspci 2>/dev/null | grep -qi bluetooth; then
         _enable_system_service bluetooth
@@ -545,7 +545,7 @@ do_services() {
         log_info "No Bluetooth hardware detected, skipping bluetooth service."
     fi
 
-    # PipeWire user services
+    # Enable PipeWire user services
     _enable_user_service pipewire
     _enable_user_service pipewire-pulse
     _enable_user_service wireplumber
@@ -554,18 +554,18 @@ do_services() {
 }
 
 # =============================================================================
-#  PHASE: PACKAGE INSTALL
+#  PHASE: PACKAGES
 # =============================================================================
 do_packages() {
-    log_info "Reading package list from $PACKAGE_LIST..."
+    log_info "Reading package list from $PACKAGE_FILE..."
 
-    mapfile -t PACKAGES < <(grep -Ev '^\s*#|^\s*$' "$PACKAGE_LIST" | sed 's/\s*#.*//' | tr -s ' ' '\n' | grep -v '^$')
+    mapfile -t packages < <(grep -Ev '^\s*#|^\s*$' "$PACKAGE_FILE" | sed 's/\s*#.*//' | tr -s ' ' '\n' | grep -v '^$')
 
-    local total="${#PACKAGES[@]}"
+    local total="${#packages[@]}"
     local first_pass_failed=()
     log_info "Installing $total packages..."
 
-    for pkg in "${PACKAGES[@]}"; do
+    for pkg in "${packages[@]}"; do
         log_info "  Installing: $pkg"
         if ! paru -S --needed --noconfirm "$pkg" 2>&1; then
             log_warn "  Failed on first attempt: $pkg"
@@ -628,28 +628,28 @@ do_dotfiles() {
     mkdir -p "$HOME/.config" "$HOME/.local/bin" "$HOME/.local/share"
     mkdir -p "$BACKUP_DIR"
 
-    # 1. Sync configuration folders from dotfiles/ directly to ~/.config/
+    # Sync configuration directories from dotfiles/ to ~/.config/
     if [[ -d "$SCRIPT_DIR/dotfiles" ]]; then
         shopt -s nullglob
-        for folder in "$SCRIPT_DIR/dotfiles"/*/; do
+        for app_dir in "$SCRIPT_DIR/dotfiles"/*/; do
             local app
-            app=$(basename "$folder")
-            _sync_dir "config/$app" "$folder" "$HOME/.config/$app"
+            app=$(basename "$app_dir")
+            _sync_dir "config/$app" "$app_dir" "$HOME/.config/$app"
         done
         shopt -u nullglob
     else
         log_warn "'dotfiles' directory not found, skipping config sync."
     fi
 
-    # 2. Sync utility scripts from root bin/ directory to ~/.local/bin/
+    # Sync utility scripts from bin/ to ~/.local/bin/
     _sync_dir "bin" "$SCRIPT_DIR/bin" "$HOME/.local/bin"
 
-    # 3. Make all scripts in ~/.local/bin executable
+    # Make all scripts in ~/.local/bin executable
     log_info "Making scripts executable..."
     find "$HOME/.local/bin" -maxdepth 1 -type f \( -name "rice-*" -o -name "*.zsh" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
     log_ok "Scripts permissions updated."
 
-    # 4. Backup summary report
+    # Report backup location
     if [[ -d "$BACKUP_DIR" ]] && [[ -n "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
         log_info "Backups of overwritten files saved to: $BACKUP_DIR"
     fi
@@ -666,10 +666,10 @@ do_rice_setup() {
     local themes_dir="$RICE_DIR/themes"
     local wallpapers_dir="$RICE_DIR/wallpapers"
 
-    # 1. Create standard folder skeleton
+    # Create the standard directory skeleton
     mkdir -p "$themes_dir" "$wallpapers_dir"
 
-    # 2. Populate default assets if they exist in your repo
+    # Populate default assets if they exist in the repo
     if [[ -d "$SCRIPT_DIR/assets/themes" ]]; then
         cp -rn "$SCRIPT_DIR/assets/themes/"* "$themes_dir/" 2>/dev/null || true
     fi
@@ -677,7 +677,7 @@ do_rice_setup() {
         cp -rn "$SCRIPT_DIR/assets/wallpapers/"* "$wallpapers_dir/" 2>/dev/null || true
     fi
 
-    # 3. Set a default active theme (e.g., 'catppuccin')
+    # Set the default active theme
     local default_theme="nord"
     local active_theme_link="$RICE_DIR/current_theme"
     local active_wallpaper_link="$RICE_DIR/current_wallpaper"
@@ -687,20 +687,20 @@ do_rice_setup() {
         log_ok "Set default active theme to: $default_theme"
     fi
 
-    # 4. Automatically link the theme's matching default wallpaper using metadata.json
+    # Link the theme's matching default wallpaper using metadata.json
     local metadata_file="$themes_dir/$default_theme/metadata.json"
     if [[ -f "$metadata_file" ]] && command -v jq &>/dev/null; then
-        local default_wp
-        default_wp=$(jq -r '.default_wallpaper // empty' "$metadata_file")
+        local default_wallpaper
+        default_wallpaper=$(jq -r '.default_wallpaper // empty' "$metadata_file")
 
-        if [[ -n "$default_wp" ]] && [[ -f "$wallpapers_dir/$default_wp" ]]; then
-            ln -sfn "$wallpapers_dir/$default_wp" "$active_wallpaper_link"
-            log_ok "Set default matching wallpaper: $default_wp"
+        if [[ -n "$default_wallpaper" ]] && [[ -f "$wallpapers_dir/$default_wallpaper" ]]; then
+            ln -sfn "$wallpapers_dir/$default_wallpaper" "$active_wallpaper_link"
+            log_ok "Set default matching wallpaper: $default_wallpaper"
         else
             log_warn "Default wallpaper specified in metadata not found in global pool."
         fi
     else
-        # Fallback: grab the first available image if metadata isn't parsed
+        # Fall back to the first available image if metadata isn't parsed
         local first_wallpaper
         first_wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -n 1)
         if [[ -n "$first_wallpaper" ]]; then
@@ -713,7 +713,7 @@ do_rice_setup() {
 }
 
 # =============================================================================
-#  PHASE: HYPRLAND KEYBOARD
+#  PHASE: KEYBOARD
 # =============================================================================
 do_keyboard() {
     local lua_file="$HOME/.config/hypr/modules/input.lua"
@@ -723,22 +723,22 @@ do_keyboard() {
         return 1
     fi
 
-    local sys_layout=$(localectl status 2>/dev/null | awk '/X11 Layout:/ {print $3}')
+    local system_layout=$(localectl status 2>/dev/null | awk '/X11 Layout:/ {print $3}')
 
-    if [ -z "$sys_layout" ]; then
-        sys_layout=$(localectl status 2>/dev/null | awk '/VC Keymap:/ {print $3}')
+    if [ -z "$system_layout" ]; then
+        system_layout=$(localectl status 2>/dev/null | awk '/VC Keymap:/ {print $3}')
     fi
 
-    if [ -z "$sys_layout" ]; then
-        sys_layout="us"
+    if [ -z "$system_layout" ]; then
+        system_layout="us"
         log_warn "Could not detect system layout. Defaulting to 'us'."
     else
-        log_info "Detected system keyboard layout: $sys_layout"
+        log_info "Detected system keyboard layout: $system_layout"
     fi
 
-    sed -i 's/\(kb_layout[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$sys_layout"'"/g' "$lua_file"
+    sed -i 's/\(kb_layout[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$system_layout"'"/g' "$lua_file"
 
-    log_ok "Successfully updated $lua_file with kb_layout = \"$sys_layout\""
+    log_ok "Successfully updated $lua_file with kb_layout = \"$system_layout\""
 }
 
 # =============================================================================
@@ -754,15 +754,15 @@ do_finalize() {
         log_warn "User directories couldn't be created."
     fi
 
-    # Safe cleanup: only remove installer temp files and paru build cache
+    # Clean up only installer temp files and the paru build cache
     log_info "Cleaning up installer temp files..."
     rm -rf /tmp/paru-build-*
     paru -Sc --noconfirm 2>/dev/null || true
-    # NOTE: We deliberately do NOT wipe $HOME/.cache — that would destroy
-    # unrelated application state the user may want to keep.
+    # Deliberately leave $HOME/.cache alone: wiping it would destroy
+    # unrelated application state the user may want to keep
     log_ok "Cleanup complete (user cache left intact)."
 
-    # SDDM display manager
+    # Enable SDDM display manager
     if command -v sddm &>/dev/null; then
         log_info "Enabling SDDM display manager..."
         # Try both possible unit names
@@ -793,7 +793,7 @@ print_report() {
     echo "  INSTALLATION REPORT"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    # Phase summary
+    # Print phase summary
     echo
     echo "  Phases:"
     for phase in "${PHASES[@]}"; do
@@ -806,7 +806,7 @@ print_report() {
         fi
     done
 
-    # Failed packages
+    # Print failed packages
     echo
     if [[ "${#FAILED_PACKAGES[@]}" -eq 0 ]]; then
         echo -e "  Packages:   \e[32mAll installed\e[0m"
@@ -820,14 +820,14 @@ print_report() {
         echo "    paru -S --needed ${FAILED_PACKAGES[*]}"
     fi
 
-    # Failed services
+    # Print failed services
     echo
     if [[ "${#FAILED_SERVICES[@]}" -eq 0 ]]; then
         echo -e "  Services:   \e[32mAll enabled\e[0m"
     else
         echo -e "  Services:   \e[33m${#FAILED_SERVICES[@]} issue(s)\e[0m"
-        for svc in "${FAILED_SERVICES[@]}"; do
-            echo "    - $svc"
+        for service in "${FAILED_SERVICES[@]}"; do
+            echo "    - $service"
         done
     fi
 
@@ -886,7 +886,7 @@ do_preflight
 # Start sudo keepalive for install/resume modes
 _start_sudo_keepalive
 
-phase_run preflight          true   # already done above — mark it
+phase_run preflight          true   # Already done above, mark it
 phase_run base_system        do_base_system
 phase_run aur_helper         do_aur_helper
 phase_run gpu_drivers        do_gpu_drivers
