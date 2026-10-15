@@ -646,7 +646,7 @@ do_rice_setup() {
     fi
 
     # 3. Set a default active theme (e.g., 'catppuccin')
-    local default_theme="catppuccin"
+    local default_theme="nord"
     local active_theme_link="$RICE_DIR/current_theme"
     local active_wallpaper_link="$RICE_DIR/current_wallpaper"
 
