@@ -577,6 +577,31 @@ do_packages() {
 # =============================================================================
 #  PHASE: HYPRLAND KEYBOARD
 # =============================================================================
+do_keyboard() {
+    local lua_file="$HOME/.config/hypr/modules/input.lua"
+
+    if [ ! -f "$lua_file" ]; then
+        log_error "File '$lua_file' not found!"
+        return 1
+    fi
+
+    local sys_layout=$(localectl status 2>/dev/null | awk '/X11 Layout:/ {print $3}')
+
+    if [ -z "$sys_layout" ]; then
+        sys_layout=$(localectl status 2>/dev/null | awk '/VC Keymap:/ {print $3}')
+    fi
+
+    if [ -z "$sys_layout" ]; then
+        sys_layout="us"
+        log_warn "Could not detect system layout. Defaulting to 'us'."
+    else
+        log_info "Detected system keyboard layout: $sys_layout"
+    fi
+
+    sed -i 's/\(kb_layout[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$sys_layout"'"/g' "$lua_file"
+
+    log_ok "Successfully updated $lua_file with kb_layout = \"$sys_layout\""
+}
 
 # =============================================================================
 #  PHASE: FINALIZE
@@ -730,6 +755,7 @@ phase_run gpu_drivers        do_gpu_drivers
 phase_run zsh                do_zsh
 phase_run services           do_services
 phase_run packages           do_packages
+phase_run kayboard           do_keyboard
 phase_run finalize           do_finalize
 
 print_report
