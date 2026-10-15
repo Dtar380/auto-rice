@@ -875,6 +875,7 @@ echo "  Rice Installer v${SCRIPT_VERSION} — mode: ${MODE^^}"
 echo "  Log: $LOG_FILE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+# Check if state file exists to resume previous run
 if [[ "$MODE" == "resume" ]] && [[ ! -f "$STATE_FILE" ]]; then
     log_warn "No state file found at $STATE_FILE. Starting fresh."
     MODE="run"
@@ -886,6 +887,7 @@ do_preflight
 # Start sudo keepalive for install/resume modes
 _start_sudo_keepalive
 
+# Run all phases in the according order
 phase_run preflight          true   # Already done above, mark it
 phase_run base_system        do_base_system
 phase_run aur_helper         do_aur_helper
@@ -898,4 +900,5 @@ phase_run rice_setup         do_rice_setup
 phase_run keyboard           do_keyboard
 phase_run finalize           do_finalize
 
+# Print final report
 print_report
