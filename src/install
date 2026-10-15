@@ -99,11 +99,28 @@ _start_sudo_keepalive() {
     if [[ -f "$SUDO_KEEPALIVE_PID_FILE" ]]; then
         local old_pid
         old_pid=$(cat "$SUDO_KEEPALIVE_PID_FILE" 2>/dev/null || true)
-        [[ -n "$old_pid" ]] && kill "$old_pid" 2>/dev/null
-        true
+        [[ -n "$old_pid" ]] && kill "$old_pid" 2>/dev/null || true
     fi
 
-    # 4. Exit the loop if the parent process ($$) dies
+    # 4. Grant passwordless sudo
+    local sudoers_drop="/etc/sudoers.d/rice-installer"
+    local target_user
+    target_user="$(id -un)"
+
+    if [[ -n "$target_user" ]] && [[ ! -f "$sudoers_drop" ]]; then
+        log_info "Granting temporary passwordless sudo for install..."
+        local tmp_sudoers
+        tmp_sudoers=$(mktemp)
+        echo "${target_user} ALL=(ALL) NOPASSWD: ALL" > "$tmp_sudoers"
+
+        if sudo visudo -cf "$tmp_sudoers" >/dev/null 2>&1; then
+            sudo install -o root -g root -m 440 "$tmp_sudoers" "$sudoers_drop"
+            log_ok "Temporary NOPASSWD granted for ${target_user} (removed on exit)."
+        fi
+        rm -f "$tmp_sudoers"
+    fi
+
+    # 5. Exit the loop if the parent process ($$) dies
     (
         while kill -0 "$$" 2>/dev/null; do
             sleep 50                              # Sleep FIRST, shorter than 60s
@@ -545,17 +562,32 @@ do_packages() {
     mapfile -t PACKAGES < <(grep -Ev '^\s*#|^\s*$' "$PACKAGE_LIST" | sed 's/\s*#.*//' | tr -s ' ' '\n' | grep -v '^$')
 
     local total="${#PACKAGES[@]}"
+    local first_pass_failed=()
     log_info "Installing $total packages..."
 
     for pkg in "${PACKAGES[@]}"; do
         log_info "  Installing: $pkg"
         if ! paru -S --needed --noconfirm "$pkg" 2>&1; then
-            log_error "  Failed installing: $pkg"
-            FAILED_PACKAGES+=("$pkg")
+            log_warn "  Failed on first attempt: $pkg"
+            first_pass_failed+=("$pkg")
         else
             log_ok "  Success installing: $pkg"
         fi
     done
+
+    if [[ "${#first_pass_failed[@]}" -gt 0 ]]; then
+        log_warn "${#first_pass_failed[@]} package(s) failed. Retrying once..."
+        for pkg in "${first_pass_failed[@]}"; do
+            log_info "  Retrying: $pkg"
+            if ! paru -S --needed --noconfirm "$pkg" 2>&1; then
+                log_error "  Failed after retry: $pkg"
+                FAILED_PACKAGES+=("$pkg")
+            else
+                log_ok "  Retry succeeded: $pkg"
+            fi
+        done
+    fi
+
 
     if [[ "${#FAILED_PACKAGES[@]}" -gt 0 ]]; then
         log_warn "The following packages could not be installed:"
