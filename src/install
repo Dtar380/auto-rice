@@ -36,9 +36,12 @@ readonly -a PHASES=(
     base_system
     aur_helper
     gpu_drivers
-    packages
     zsh
     services
+    packages
+    dotfiles
+    rice_setup
+    keyboard
     finalize
 )
 
@@ -719,10 +722,10 @@ do_finalize() {
         log_warn "User directories couldn't be created."
     fi
 
-    # Safe cleanup: only remove installer temp files and yay build cache
+    # Safe cleanup: only remove installer temp files and paru build cache
     log_info "Cleaning up installer temp files..."
-    rm -rf /tmp/yay-build-*
-    yay -Sc --noconfirm 2>/dev/null || true
+    rm -rf /tmp/paru-build-*
+    paru -Sc --noconfirm 2>/dev/null || true
     # NOTE: We deliberately do NOT wipe $HOME/.cache — that would destroy
     # unrelated application state the user may want to keep.
     log_ok "Cleanup complete (user cache left intact)."
@@ -782,7 +785,7 @@ print_report() {
         done
         echo
         echo "  Retry with:"
-        echo "    yay -S --needed ${FAILED_PACKAGES[*]}"
+        echo "    paru -S --needed ${FAILED_PACKAGES[*]}"
     fi
 
     # Failed services
@@ -858,6 +861,8 @@ phase_run gpu_drivers        do_gpu_drivers
 phase_run zsh                do_zsh
 phase_run services           do_services
 phase_run packages           do_packages
+phase_run dotfiles           do_dotfiles
+phase_run rice_setup         do_rice_setup
 phase_run keyboard           do_keyboard
 phase_run finalize           do_finalize
 
