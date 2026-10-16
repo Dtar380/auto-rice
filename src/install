@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # =============================================================================
 #  Rice Installer
 #  Usage:
@@ -777,20 +778,29 @@ do_finalize() {
     # unrelated application state the user may want to keep
     log_ok "Cleanup complete (user cache left intact)."
 
-    # Enable SDDM display manager
+# Enable SDDM display manager and configure its theme slot
     if command -v sddm &>/dev/null; then
         log_info "Enabling SDDM display manager..."
         # Try both possible unit names
         if _unit_exists "sddm.service" 2>/dev/null || _unit_exists "sddm" 2>/dev/null; then
             sudo systemctl enable sddm.service 2>/dev/null || sudo systemctl enable sddm 2>/dev/null || true
             if sudo systemctl is-enabled sddm &>/dev/null || sudo systemctl is-enabled sddm.service &>/dev/null; then
-                log_ok "SDDM enabled successfully. Restart the system to apply changes."
+                log_ok "SDDM enabled successfully."
             else
                 log_warn "SDDM may not be properly enabled. Try: sudo systemctl enable sddm"
             fi
         else
             log_warn "SDDM service unit not found."
         fi
+
+        log_info "Configuring SDDM active theme slot..."
+        sudo mkdir -p /usr/share/sddm/themes/rice-active
+
+        # Write the SDDM configuration drop-in file
+        sudo mkdir -p /etc/sddm.conf.d
+        echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
+
+        log_ok "SDDM configured to use 'rice-active' theme slot. Restart the system to apply changes."
     else
         log_warn "SDDM not installed — display manager not enabled."
         log_warn "Add 'sddm' to packages.txt if you want a graphical login screen."
