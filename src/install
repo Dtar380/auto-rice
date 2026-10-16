@@ -208,7 +208,7 @@ do_preflight() {
 
     # Check not running as root
     if [[[ "$EUID" -eq 0 ] || [ -n "$SUDO_USER" ]]]; then
-        log_error "Do not run this script as root. RUn it as your normal user"
+        log_error "Do not run this script as root. Run it as your normal user"
         (( errors++ ))
     else
         log_ok "Not running as root."
@@ -244,7 +244,7 @@ do_preflight() {
     fi
 
     # Check internet connectivity
-    if [ ping -c "ping.archlinux.org" > /dev/null 2>&1 ]; then
+    if ping -c "ping.archlinux.org" > /dev/null 2>&1; then
         log_error "No internet connection (archlinux.org unreachable)."
         (( errors++ ))
     else
@@ -353,7 +353,7 @@ do_aur_helper() {
     # Install paru
     log_info "Installing paru AUR helper..."
     local paru_build_dir="/tmp/paru-build-$$"
-    git clone https://aur.archlinux.or/paru.git "$paru_build_dir"
+    git clone https://aur.archlinux.org/paru.git "$paru_build_dir"
     pushd "$paru_build_dir" > /dev/null
     makepkg -si --noconfirm
     popd > /dev/null
@@ -478,14 +478,29 @@ do_zsh() {
         log_ok "ZSH is already installed"
     fi
 
+    # Force ZSH to use ~/.config/zsh via ZDOTDIR globally
+    log_info "Configuring ZSH to use ~/.config/zsh via /etc/zsh/zshenv..."
+    sudo mkdir -p /etc/zsh
+    if ! grep -q "ZDOTDIR" /etc/zsh/zshenv 2>/dev/null; then
+        echo 'export ZDOTDIR="$HOME/.config/zsh"' | sudo tee -a /etc/zsh/zshenv >/dev/null
+        log_ok "Added ZDOTDIR redirection to /etc/zsh/zshenv."
+    else
+        log_ok "ZDOTDIR is already configured in /etc/zsh/zshenv."
+    fi
+
+    # Ensure the local zsh config directory exists
+    mkdir -p "$HOME/.config/zsh"
+
     # Set as default shell if not set
     local current_shell=$(getent passwd "$USER" | cut -d: -f7)
     local zsh_path=$(which zsh)
     if [ "$current_shell" != "$zsh_path" ]; then
-        sudo cshs -s "$zsh_path" "$USER"
+        sudo chsh -s "$zsh_path" "$USER"
     else
         log_ok "ZSH was already set as default shell"
     fi
+
+
 }
 
 # =============================================================================
