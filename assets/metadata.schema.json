@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/yourusername/auto-rice/main/src/assets/schemas/metadata.schema.json",
+  "title": "Rice Theme Metadata",
+  "description": "Metadata schema for custom and auto-generated auto-rice themes",
+  "type": "object",
+  "required": ["name", "version", "default_wallpaper", "wallpapers"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Path or URL to the JSON schema for editor validation"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the theme (e.g., 'Nord', 'Catppuccin')"
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name or GitHub handle"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic versioning format (e.g., '1.0.0')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief summary of the theme's color palette and aesthetic"
+    },
+    "default_wallpaper": {
+      "type": "string",
+      "description": "Filename of the default wallpaper located in wallpapers/"
+    },
+    "wallpapers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "List of available wallpaper filenames stored in wallpapers/"
+    },
+    "palette": {
+      "type": "object",
+      "description": "Color palette definitions used by generator scripts to build app configs",
+      "required": ["bg", "fg", "accent", "selection", "colors"],
+      "properties": {
+        "bg": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Primary background color (HEX format, e.g., #2e3440)"
+        },
+        "fg": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Primary foreground/text color (HEX format, e.g., #d8dee9)"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Primary accent color (HEX format, e.g., #88c0d0)"
+        },
+        "selection": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Selection/highlight background color (HEX format, e.g., #434c5e)"
+        },
+        "colors": {
+          "type": "object",
+          "description": "Standard 16-color ANSI terminal palette",
+          "required": [
+            "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+            "bright_black", "bright_red", "bright_green", "bright_yellow",
+            "bright_blue", "bright_magenta", "bright_cyan", "bright_white"
+          ],
+          "properties": {
+            "black": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "red": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "green": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "yellow": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "blue": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "magenta": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "cyan": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "white": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_black": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_red": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_green": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_yellow": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_blue": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_magenta": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_cyan": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
+            "bright_white": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
