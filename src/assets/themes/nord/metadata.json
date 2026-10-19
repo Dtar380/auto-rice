@@ -1,0 +1,35 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Dtar380/auto-rice/refs/heads/master/assets/metadata.schema.json",
+    "name": "Nord",
+    "author": "Dtar380",
+    "version": "1.0.0",
+    "description": "",
+    "default_wallpaper": "nord_001.png",
+    "wallpapers": [
+        "nord_001.png"
+    ],
+    "palette": {
+        "bg": "#2e3440",
+        "fg": "#e5e9f0",
+        "accent": "#81a1c1",
+        "selection": "#88c0d0",
+        "colors": {
+            "black": "#2e3440",
+            "red": "#bf616a",
+            "yellow": "#a3be8c",
+            "green": "#ebcb8b",
+            "blue": "#5e81ac",
+            "cyan": "#88c0d0",
+            "magenta": "#b48ead",
+            "white": "#e5e9f0",
+            "bright_black": "#3b4252",
+            "bright_red": "#bf616a",
+            "bright_yellow": "#a3be8c",
+            "bright_green": "#ebcb8b",
+            "bright_blue": "#5e81ac",
+            "bright_cyan": "#88c0d0",
+            "bright_magenta": "#b48ead",
+            "bright_white": "#eceff4"
+        }
+    }
+}
