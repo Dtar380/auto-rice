@@ -778,7 +778,7 @@ do_finalize() {
     # unrelated application state the user may want to keep
     log_ok "Cleanup complete (user cache left intact)."
 
-# Enable SDDM display manager and configure its theme slot
+    # Enable SDDM display manager and configure its theme slot
     if command -v sddm &>/dev/null; then
         log_info "Enabling SDDM display manager..."
         # Try both possible unit names
