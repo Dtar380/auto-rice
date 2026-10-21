@@ -78,7 +78,7 @@ show_themes_menu() {
 
     if [[ -n "$selected_display_name" ]]; then
         local target_folder="${theme_map[$selected_display_name]}"
-        notify-send "Rice Menu (Dry Run)" "Selected Theme: $selected_display_name ($target_folder)"
+        "$SCRIPT_DIR/theme-switcher.zsh" "$target_folder"
     fi
 }
 
@@ -139,13 +139,29 @@ show_wallpapers_menu() {
         ((index++))
     done
 
-    # Display menu (tip: custom Rofi rasi themes can use -theme-str to show icon-only grid)
+    # Display menu
     local selected_label
     selected_label=$(printf "%b" "$rofi_input" | rofi -dmenu -p "Wallpaper" -show-icons)
 
+    # If the user made a selection (didn't hit Escape/dismiss Rofi)
     if [[ -n "$selected_label" ]]; then
-        local selected_file="${wallpaper_map[$selected_label]}"
-        notify-send "Rice Menu (Dry Run)" "Selected Wallpaper File: $selected_file"
+        local selected_filename="${wallpaper_map[$selected_label]:-}"
+
+        if [[ -z "$selected_filename" ]]; then
+            notify-send "Rice Error" "Could not resolve selected wallpaper key"
+            exit 1
+        fi
+
+        local full_wp_path="$active_theme_dir/wallpapers/$selected_filename"
+
+        # Fallback check for global wallpapers directory
+        [[ ! -f "$full_wp_path" ]] && full_wp_path="$WALLPAPERS_DIR/$selected_filename"
+
+        if [[ -f "$full_wp_path" ]]; then
+            "$SCRIPT_DIR/wallpaper-switcher.zsh" "$full_wp_path"
+        else
+            notify-send "Rice Error" "Wallpaper file not found: $selected_filename"
+        fi
     fi
 }
 
