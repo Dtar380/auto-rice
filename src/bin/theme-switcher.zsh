@@ -12,9 +12,11 @@ local REPO_ROOT="${SCRIPT_DIR:A:h:h}"
 # Path defaults
 local RICE_DIR="${RICE_DIR:-$HOME/.local/share/rice}"
 local THEMES_DIR="${RICE_DIR}/themes"
+local WALLPAPERS_DIR="${RICE_DIR}/wallpapers"
 
 # Development fallback to local repo assets if runtime dir is missing/empty
 [[ ! -d "$THEMES_DIR" ]] && THEMES_DIR="$REPO_ROOT/src/assets/themes"
+[[ ! -d "$WALLPAPERS_DIR" ]] && WALLPAPERS_DIR="$REPO_ROOT/src/assets/wallpapers"
 
 local CURRENT_THEME_LINK="${RICE_DIR}/current_theme"
 local SDDM_ACTIVE_DIR="/usr/share/sddm/themes/rice-active"
@@ -78,8 +80,8 @@ fi
 local default_wp_name
 default_wp_name=$(jq -r '.default_wallpaper // empty' "$metadata_file" 2>/dev/null)
 
-if [[ -n "$default_wp_name" && -f "$theme_dir/wallpapers/$default_wp_name" ]]; then
-    "$SCRIPT_DIR/rice-wallpaper" "$theme_dir/wallpapers/$default_wp_name"
+if [[ -n "$default_wp_name" && -f "$WALLPAPERS_DIR/$default_wp_name" ]]; then
+    "$SCRIPT_DIR/wallpaper-switcher.zsh" "$WALLPAPERS_DIR/$default_wp_name"
 fi
 
 local theme_name="${theme_dir:t}"
