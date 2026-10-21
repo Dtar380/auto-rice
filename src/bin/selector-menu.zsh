@@ -160,7 +160,7 @@ case "${1:-}" in
         show_wallpapers_menu
         ;;
     *)
-        echo "Usage: rice-menu {themes|wallpapers}"
+        echo "Usage: selector-menu {themes|wallpapers}"
         exit 1
         ;;
 esac
