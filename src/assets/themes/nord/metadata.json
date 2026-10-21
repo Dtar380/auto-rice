@@ -6,7 +6,8 @@
     "description": "",
     "default_wallpaper": "nord_001.png",
     "wallpapers": [
-        "nord_001.png"
+        "nord_001.png",
+        "nord_002.png"
     ],
     "palette": {
         "bg": "#2e3440",
