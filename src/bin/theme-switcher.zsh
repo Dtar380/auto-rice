@@ -43,6 +43,18 @@ else
     exit 1
 fi
 
+# =============================================================================
+#  SMART GUARD: SKIP IF ALREADY ACTIVE
+# =============================================================================
+if [[ -L "$CURRENT_THEME_LINK" ]]; then
+    local current_target
+    current_target=$(readlink -f "$CURRENT_THEME_LINK")
+    if [[ "$current_target" == "$(readlink -f "$theme_dir")" ]]; then
+        notify-send "Rice" "Theme '${theme_dir:t}' is already active."
+        exit 0
+    fi
+fi
+
 local metadata_file="$theme_dir/metadata.json"
 if [[ ! -f "$metadata_file" ]]; then
     notify-send "Rice Error" "Missing metadata.json in $theme_dir"
@@ -50,7 +62,6 @@ if [[ ! -f "$metadata_file" ]]; then
 fi
 
 # 1. Update session theme symlink
-mkdir -p "$RICE_DIR"
 ln -sfn "$theme_dir" "$CURRENT_THEME_LINK"
 
 # 2. Compile app configurations if compiler script exists

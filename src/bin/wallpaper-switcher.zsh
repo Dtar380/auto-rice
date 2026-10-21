@@ -22,8 +22,17 @@ if [[ -z "$target_wp" || ! -f "$target_wp" ]]; then
     exit 1
 fi
 
-# Ensure runtime state directory exists
-mkdir -p "$RICE_DIR"
+# =============================================================================
+#  SMART GUARD: SKIP IF ALREADY ACTIVE
+# =============================================================================
+if [[ -L "$CURRENT_WP_LINK" ]]; then
+    local current_wp_target
+    current_wp_target=$(readlink -f "$CURRENT_WP_LINK")
+    if [[ "$current_wp_target" == "$(readlink -f "$target_wp")" ]]; then
+        notify-send "Rice" "Wallpaper is already active."
+        exit 0
+    fi
+fi
 
 # 1. Update session persistent symlink
 ln -sf "$target_wp" "$CURRENT_WP_LINK"
