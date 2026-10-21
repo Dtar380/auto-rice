@@ -2,3 +2,4 @@ click==8.5.0
 colorthief==0.2.1
 Jinja2==3.1.6
 jsonschema==4.26.0
+requests==2.34.2
