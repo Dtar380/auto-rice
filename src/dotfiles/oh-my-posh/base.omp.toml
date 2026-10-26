@@ -1,0 +1,104 @@
+"$schema" = "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json"
+final_space = true
+version = 4
+
+[[blocks]]
+type = "prompt"
+alignment = "left"
+
+    [[blocks.segments]]
+    type = "os"
+    style = "plain"
+    foreground = "p:yellow"
+    template = " \u256d\u2500<p:red>[<p:blue>{{.Icon}}</> </>"
+
+    [[blocks.segments]]
+    type = "session"
+    style = "plain"
+    foreground = "p:yellow"
+    template = " {{ if .SSHSession }}\ueba9 {{ end }}{{ .UserName }}@{{ .HostName }}<#BF616A>]</> "
+
+    [[blocks.segments]]
+    type = "path"
+    style = "plain"
+    foreground = "p:magenta"
+
+    	[blocks.segments.options]
+        style = "agnoster_short"
+        folder_icon = "\uf07b"
+        folder_separator_icon = " / "
+        home_icon = "\uf015"
+        max_depth = 2
+
+    [[blocks.segments]]
+    type = "executiontime"
+    style = "plain"
+    foreground = "p:blue"
+    template = " \U000f1453 {{ .FormattedMs }}"
+
+    	[blocks.segments.options]
+	    always_enabled = true
+	    style = "austin"
+	    threshold = 500
+
+    [[blocks.segments]]
+    type = "status"
+    style = "plain"
+    foreground = "p:green"
+    foreground_templates = [ "{{ if gt .Code 0 }}p:red{{ end }}" ]
+    template = " {{ if gt .Code 0 }}\u2718{{ else }}\U000f0e1e {{ end }}{{ if eq ( gt .Code 0) .Segments.Path.Writable }} {{ end }}"
+
+    	[blocks.segments.options]
+	always_enabled = true
+
+[[blocks]]
+type = "prompt"
+alignment = "right"
+
+    [[blocks.segments]]
+    type = "git"
+    style = "plain"
+    foreground = "p:yellow"
+    template = "{{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus}} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if and (.Working.Change) (.Staging.Changed) }} |{{end}}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }}{{ if gt .StashCount 0 }} \U000f0193 {{ .StashCount }}{{ end }}"
+
+    	[blocks.segments.options]
+        branch_icon = "\ue725"
+        fetch_status = true
+        fetch_status_count = true
+        fetch_upstream_icon = true
+        fetch_upstream_count = true
+
+    [[blocks.segments]]
+    type = "time"
+    style = "plain"
+    foreground = "p:cyan"
+    template = "{{ .CurrentDate | date .Format }} "
+
+    	[blocks.segments.options]
+        time_format = "Mon | 15:04"
+
+    [[blocks.segments]]
+    type = "battery"
+    style = "plain"
+    foreground = "p:orange"
+    background_templates = [
+	"{{ if eq \"Charging\" .State.String }}p:green{{ end }}",
+	"{{ if eq \"Discharging\" .State.String }}p:red{{ end }}"
+    ]
+    template = "{{ .Percentage }}\U000f03f0"
+
+    	[blocks.segments.options]
+        charged_icon = "\U000f0079"
+        charging_icon = "\U000f0084"
+        discharging_icon = "\U000f17e5"
+
+[[blocks]]
+type = "prompt"
+alignment = "left"
+newline = true
+
+    [[blocks.segments]]
+    type = "text"
+    style = "plain"
+    foreground = "p:blue"
+    template = " <p:yellow>\u2570\u2500</><p:green>\U000f0b6f</><p:yellow>\U000f0b6f</><p:orange>\U000f0b6f</> \u2771 "
