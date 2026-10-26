@@ -725,6 +725,8 @@ do_rice_setup() {
         fi
     fi
 
+    # TODO: Create theme/color scheme symlink files inside the dotfiles were configs require theming to be inside the .config directory of the APP
+
     log_ok "Rice state architecture initialized at $RICE_DIR"
 }
 
