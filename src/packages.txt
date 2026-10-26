@@ -52,6 +52,7 @@ noto-fonts-cjk               # CJK character support (Chinese, Japanese, Korean)
 # Terminal and utilities
 #==============================================================================
 alacritty                    # GPU-accelerated terminal emulator
+btop                         # Resource and process monitor
 tmux                         # Terminal multiplexer
 fastfetch                    # system information tool similar to neofetch
 oh-my-posh                   # customizable and advanced shell prompt

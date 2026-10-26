@@ -25,7 +25,7 @@ apply_wallpaper() {
         sleep 0.2
     fi
 
-    awww img "$target_wp" --transition-type grow --transition-fps 60 >/dev/null 2>&1
+    awww img "$target_wp" --transition-type grow --transition-duration 2 --transition-bezier 0.25,0.1,0.25,1.0 --transition-fps 60 >/dev/null 2>&1
 
     # 3. Sync to SDDM active slot if it exists
     if [[ -d "$SDDM_ACTIVE_DIR" ]]; then
