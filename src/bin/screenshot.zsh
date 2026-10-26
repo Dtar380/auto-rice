@@ -1,5 +1,4 @@
 #!/usr/bin/zsh
-# ~/.local/bin/screenshot
 
 set -euo pipefail
 
