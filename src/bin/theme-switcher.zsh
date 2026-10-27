@@ -32,7 +32,6 @@ reload_active_apps() {
         [waybar]="pkill -USR2 waybar"
         [mako]="makoctl reload"
         [eww]="eww reload"
-        [alacritty]="pkill -USR1 alacritty" # Or let Alacritty hot-reload automatically if watched
     )
 
     for proc_name in "${(@k)app_reload_cmds}"; do

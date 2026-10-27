@@ -99,7 +99,7 @@ export MANRWIDTH=80
 # =============================================================================
 eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
-eval "$(oh-my-posh init zsh --config "${HOME}/.local/share/rice/current_theme/oh-my-posh.toml")"
+eval "$(oh-my-posh init zsh --config "${HOME}/.local/share/rice/current_theme/oh-my-posh/colors.toml")"
 
 # =============================================================================
 #  WELCOME
