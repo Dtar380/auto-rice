@@ -676,6 +676,20 @@ do_dotfiles() {
 # =============================================================================
 #  PHASE: RICE SETUP
 # =============================================================================
+_link_theme_file() {
+    local app_name="$1"
+    local src_file="$2"
+    local dest_file="$3"
+
+    if [[ -f "$src_file" ]]; then
+        mkdir -p "$(dirname "$dest_file")"
+        ln -sfn "$src_file" "$dest_file"
+        log_ok "Linked theme configuration for: $app_name"
+    else
+        log_warn "Theme file for '$app_name' not found at: $src_file"
+    fi
+}
+
 do_rice_setup() {
     log_info "Setting up Rice themes and wallpaper infrastructure..."
 
@@ -725,7 +739,15 @@ do_rice_setup() {
         fi
     fi
 
-    # TODO: Create theme/color scheme symlink files inside the dotfiles were configs require theming to be inside the .config directory of the APP
+    # TODO: Add all theme/color file symlinks for app that require specifics
+    # Yazi
+    _link_theme_file "yazi" "$active_theme_dir/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
+
+    # Rofi
+    _link_theme_file "rofi" "$active_theme_dir/rofi/colors.rasi" "$HOME/.config/rofi/colors.rasi"
+
+    # Btop
+    _link_theme_file "btop" "$active_theme_dir/btop/theme.theme" "$HOME/.config/btop/themes/rice-active.theme"
 
     log_ok "Rice state architecture initialized at $RICE_DIR"
 }
@@ -796,16 +818,34 @@ do_finalize() {
         fi
 
         log_info "Configuring SDDM active theme slot..."
-        sudo mkdir -p /usr/share/sddm/themes/rice-active
+        local sddm_active_slot="/usr/share/sddm/themes/rice-active"
+        sudo mkdir -p "$sddm_active_slot"
+
+        # 1. Copy master SDDM layout templates from repo assets
+        if [[ -d "$SCRIPT_DIR/assets/sddm" ]]; then
+            sudo cp -rn "$SCRIPT_DIR/assets/sddm/"* "$sddm_active_slot/"
+        fi
+
+        # 2. Copy the active theme's SDDM color config if the theme provides one
+        local active_theme_dir="$RICE_DIR/current_theme"
+        if [[ -f "$active_theme_dir/sddm/colors.conf" ]]; then
+            sudo cp "$active_theme_dir/sddm/colors.conf" "$sddm_active_slot/colors.conf"
+        fi
+
+        # 3. Mirror the initial active wallpaper into SDDM so it matches on first boot
+        local active_wallpaper="$RICE_DIR/current_wallpaper"
+        if [[ -L "$active_wallpaper" ]]; then
+            sudo cp -L "$active_wallpaper" "$sddm_active_slot/background.png" 2>/dev/null || true
+            log_ok "Synced current wallpaper to SDDM background."
+        fi
 
         # Write the SDDM configuration drop-in file
         sudo mkdir -p /etc/sddm.conf.d
         echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
 
-        log_ok "SDDM configured to use 'rice-active' theme slot. Restart the system to apply changes."
+        log_ok "SDDM configured to use dynamic 'rice-active' theme."
     else
         log_warn "SDDM not installed — display manager not enabled."
-        log_warn "Add 'sddm' to packages.txt if you want a graphical login screen."
     fi
 
     log_ok "Finalization complete."

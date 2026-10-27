@@ -22,6 +22,27 @@ local CURRENT_THEME_LINK="${RICE_DIR}/current_theme"
 local SDDM_ACTIVE_DIR="/usr/share/sddm/themes/rice-active"
 
 # =============================================================================
+#  DYNAMIC APP RELOADER
+# =============================================================================
+reload_active_apps() {
+    log_info "Reloading active theme-dependent applications..."
+
+    # Define a registry of apps: [process_name]="reload_command"
+    local -A app_reload_cmds=(
+        [waybar]="pkill -USR2 waybar"
+        [mako]="makoctl reload"
+        [eww]="eww reload"
+        [alacritty]="pkill -USR1 alacritty" # Or let Alacritty hot-reload automatically if watched
+    )
+
+    for proc_name in "${(@k)app_reload_cmds}"; do
+        if pgrep -x "$proc_name" >/dev/null 2>&1; then
+            eval "${app_reload_cmds[$proc_name]}" 2>/dev/null && log_ok "Reloaded $proc_name" || log_warn "Failed to reload $proc_name"
+        fi
+    done
+}
+
+# =============================================================================
 #  CORE SWITCH LOGIC
 # =============================================================================
 apply_theme() {
@@ -55,11 +76,19 @@ apply_theme() {
         sudo mkdir -p "$SDDM_ACTIVE_DIR"
         sudo cp -r "$theme_dir/sddm/"* "$SDDM_ACTIVE_DIR/" 2>/dev/null || true
 
+        # Mirror wallpaper into SDDM directory if it exists
+        if [[ -L "$CURRENT_WP_LINK" ]]; then
+            sudo cp -L "$CURRENT_WP_LINK" "$SDDM_ACTIVE_DIR/background.png" 2>/dev/null || true
+        fi
+
         sudo mkdir -p /etc/sddm.conf.d
         echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
     fi
 
-    # 5. Extract default wallpaper and apply via wallpaper-switcher
+    # 5. reload all apps
+    reload_active_apps
+
+    # 6. Extract default wallpaper and apply via wallpaper-switcher
     local default_wp_name
     default_wp_name=$(jq -r '.default_wallpaper // empty' "$metadata_file" 2>/dev/null)
 

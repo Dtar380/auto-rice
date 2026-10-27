@@ -29,7 +29,7 @@ apply_wallpaper() {
 
     # 3. Sync to SDDM active slot if it exists
     if [[ -d "$SDDM_ACTIVE_DIR" ]]; then
-        sudo cp "$target_wp" "${SDDM_ACTIVE_DIR}/background.png" 2>/dev/null || true
+        sudo cp -L "$target_wp" "${SDDM_ACTIVE_DIR}/background.png" 2>/dev/null || true
     fi
 
     notify-send "Rice" "Wallpaper updated!" -i "$target_wp"

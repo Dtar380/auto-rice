@@ -8,8 +8,8 @@ padding = { x = 5, y = 5}
 opacity = 0.85
 
 [scrolling]
-history = 5000
-multiplier = 3
+history = 10000
+multiplier = 2
 
 [font]
 normal = { family = "JetBrainsMono Nerd", style = "Medium" }
@@ -17,8 +17,12 @@ builtin_box_drawing = true
 size = 12
 
 [cursor]
-style = { shape = "Beam", blinking = "Always" }
+style = { shape = "Beam", blinking = "On" }
+blink_interval = 500
 thickness = 0.25
+`
+[selection]
+save_to_clipboard = true
 
 [terminal]
 shell = "/usr/bin/zsh"
