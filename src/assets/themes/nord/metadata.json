@@ -10,8 +10,8 @@
         "nord_002.png"
     ],
     "palette": {
-        "bg": "#2e3440",
-        "fg": "#e5e9f0",
+        "background": "#2e3440",
+        "foreground": "#e5e9f0",
         "accent": "#81a1c1",
         "selection": "#88c0d0",
         "colors": {
