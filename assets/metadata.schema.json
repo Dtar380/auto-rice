@@ -43,14 +43,14 @@
     "palette": {
       "type": "object",
       "description": "Color palette definitions used by generator scripts to build app configs",
-      "required": ["bg", "fg", "accent", "selection", "colors"],
+      "required": ["background", "foreground", "accent", "selection", "colors"],
       "properties": {
-        "bg": {
+        "background": {
           "type": "string",
           "pattern": "^#([0-9a-fA-F]{6})$",
           "description": "Primary background color (HEX format, e.g., #2e3440)"
         },
-        "fg": {
+        "foreground": {
           "type": "string",
           "pattern": "^#([0-9a-fA-F]{6})$",
           "description": "Primary foreground/text color (HEX format, e.g., #d8dee9)"
