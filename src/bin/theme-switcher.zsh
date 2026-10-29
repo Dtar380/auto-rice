@@ -33,6 +33,7 @@ reload_active_apps() {
         [mako]="makoctl reload"
         [eww]="eww reload"
         [yazi]="ya cache clear"
+        [hyprland]="hyprctl reload"
     )
 
     for proc_name in "${(@k)app_reload_cmds}"; do
