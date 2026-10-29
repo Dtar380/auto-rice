@@ -84,7 +84,6 @@ alias cat='bat --style=plain'
 alias grep='rg'
 alias vim='nvim'
 alias vi='nvim'
-alias yazi='y'
 alias ..='cd ..'
 alias ...='cd ../..'
 

@@ -32,6 +32,7 @@ reload_active_apps() {
         [waybar]="pkill -USR2 waybar"
         [mako]="makoctl reload"
         [eww]="eww reload"
+        [yazi]="ya cache clear"
     )
 
     for proc_name in "${(@k)app_reload_cmds}"; do

@@ -68,6 +68,7 @@ pamixer                      # PipeWire/PulseAudio volume control from CLI and s
 # File explorer
 #==============================================================================
 yazi                         # terminal-based file manager
+ueberzugpp                   # Image rendering in terminal for alacritty
 
 #==============================================================================
 # Multimedia
