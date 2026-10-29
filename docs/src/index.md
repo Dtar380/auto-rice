@@ -36,6 +36,14 @@ Source <https://github.com/Dtar380/auto-rice>
 
 **Auto Rice** is aimed for users that don't want to spend time ricing their environment but still want a good looking desktop.
 
+**Auto Rice** default packaging is heavely terminal based so its _NOT_ recomended for beginners.
+
+## Forking
+
+Feel free to create forks with different dotfiles, packages, etc.
+
+Since the install script depends on whats inside the `bin/` `dotfiles/` and `assets/` directories and installs the packages listed inside `packages.txt`, changing the entire look and feel is as simple as replacing all of them by your custom ones.
+
 ## Where to start
 
 You can start with the step by step tutorial about **Auto Rice** here at Read The Docs:
