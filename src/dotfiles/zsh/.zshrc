@@ -96,7 +96,7 @@ export MANRWIDTH=80
 # =============================================================================
 #  INTEGRATIONS
 # =============================================================================
-eval "$(fzf --zsh --preview="bat --color=always {}")"
+eval "$(fzf -m --zsh --preview="bat --color=always {}")"
 eval "$(zoxide init --cmd cd zsh)"
 eval "$(oh-my-posh init zsh --config "${HOME}/.local/share/rice/current_theme/oh-my-posh/colors.toml")"
 
