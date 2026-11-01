@@ -125,7 +125,7 @@ _start_sudo_keepalive() {
     (
         while kill -0 "$$" 2>/dev/null; do
             sleep 50                              # Sleep first, shorter than 60s
-            sudo -n true </dev/null 2>/dev/null  # Redirect stdin/stderr to prevent prompts
+            sudo -n true </dev/null 2>/dev/null   # Redirect stdin/stderr to prevent prompts
         done
     ) &
     local keepalive_pid=$!
@@ -826,7 +826,7 @@ do_finalize() {
         # if [[ -d "$SCRIPT_DIR/assets/sddm" ]]; then
         #     sudo cp -rn "$SCRIPT_DIR/assets/sddm/"* "$sddm_active_slot/"
         # fi
-
+        #
         # # 2. Copy the active theme's SDDM color config if the theme provides one
         # local active_theme_link="$RICE_DIR/current_theme"
         # if [[ -f "$active_theme_link/sddm/colors.conf" ]]; then
