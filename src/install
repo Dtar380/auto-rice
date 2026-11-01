@@ -508,7 +508,9 @@ do_zsh() {
 #  PHASE: SERVICES
 # =============================================================================
 _unit_exists() {
-    systemctl list-unit-files --full --no-legend "$1" 2>/dev/null | grep -q "$1"
+    local unit="$1"
+    [[ "$unit" != *.service ]] && unit="${unit}.service"
+    systemctl list-unit-files --full --no-legend "$unit" 2>/dev/null | grep -q "$unit"
 }
 
 _enable_system_service() {
@@ -545,7 +547,7 @@ do_services() {
     sudo pacman -S --needed --noconfirm \
         networkmanager network-manager-applet \
         bluez bluez-utils bluetui \
-        pipewire pipewire-pulse wireplumber pavucontrol
+        pipewire pipewire-audio pipewire-pulse wireplumber pavucontrol
     log_ok "Service packages installed."
 
     log_info "Enabling services..."
@@ -563,6 +565,7 @@ do_services() {
 
     # Enable PipeWire user services
     _enable_user_service pipewire
+    _enable_user_service pipewire-audio
     _enable_user_service pipewire-pulse
     _enable_user_service wireplumber
 
