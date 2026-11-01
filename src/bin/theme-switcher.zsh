@@ -72,24 +72,10 @@ apply_theme() {
         makoctl reload || true
     fi
 
-    # 4. Sync theme SDDM template files if theme provides an sddm/ folder
-    if [[ -d "$theme_dir/sddm" ]]; then
-        sudo mkdir -p "$SDDM_ACTIVE_DIR"
-        sudo cp -r "$theme_dir/sddm/"* "$SDDM_ACTIVE_DIR/" 2>/dev/null || true
-
-        # Mirror wallpaper into SDDM directory if it exists
-        if [[ -L "$CURRENT_WP_LINK" ]]; then
-            sudo cp -L "$CURRENT_WP_LINK" "$SDDM_ACTIVE_DIR/background.png" 2>/dev/null || true
-        fi
-
-        sudo mkdir -p /etc/sddm.conf.d
-        echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
-    fi
-
-    # 5. reload all apps
+    # 4. reload all apps
     reload_active_apps
 
-    # 6. Extract default wallpaper and apply via wallpaper-switcher
+    # 5. Extract default wallpaper and apply via wallpaper-switcher
     local default_wp_name
     default_wp_name=$(jq -r '.default_wallpaper // empty' "$metadata_file" 2>/dev/null)
 
@@ -103,6 +89,25 @@ apply_theme() {
 
         if [[ -f "$default_wp_file" ]]; then
             "$SCRIPT_DIR/wallpaper-switcher.zsh" "$default_wp_file"
+        fi
+    fi
+
+    # 6. Sync theme SDDM template files if theme provides an sddm/ folder
+    if [[ -d "$theme_dir/sddm" ]]; then
+        sudo mkdir -p "$SDDM_ACTIVE_DIR"
+        sudo cp -r "$theme_dir/sddm/"* "$SDDM_ACTIVE_DIR/" 2>/dev/null || true
+
+        # Mirror wallpaper into SDDM directory if it exists
+        if [[ -L "$default_wp_name" ]]; then
+            sudo cp -L "$default_wp_name" "$SDDM_ACTIVE_DIR/background.png" 2>/dev/null || true
+        fi
+
+        # Write SDDM configuration drop-in only if it does not already exist
+        local sddm_conf="/etc/sddm.conf.d/theme.conf"
+        if [[ ! -f "$sddm_conf" ]]; then
+            sudo mkdir -p /etc/sddm.conf.d
+            echo -e "[Theme]\nCurrent=rice-active" | sudo tee "$sddm_conf" >/dev/null
+            log_ok "Created SDDM theme configuration drop-in."
         fi
     fi
 
