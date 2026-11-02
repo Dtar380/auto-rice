@@ -822,6 +822,7 @@ do_finalize() {
         sudo mkdir -p "$sddm_active_slot"
 
         # 1. Copy master SDDM layout templates from repo assets
+        local sddm_assets_dir="$SCRIPT_DIR/assets/sddm"
         if [[ -d "$SCRIPT_DIR/assets/sddm" ]]; then
             sudo cp -rn "$SCRIPT_DIR/assets/sddm/"* "$sddm_active_slot/"
         fi
@@ -840,7 +841,7 @@ do_finalize() {
         fi
 
         # Write the SDDM configuration drop-in file
-        if [[ -f "$sddm_active_slot/main.qml" ]] && [[ -s "$sddm_active_slot/main.qml" ]]; then
+        if [[ -d "$sddm_assets_dir/main.qml" ]] && [[ -s "$sddm_assets_dir/main.qml" ]]; then
             sudo mkdir -p /etc/sddm.conf.d
             echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
             log_ok "SDDM configured to use dynamic 'rice-active' theme."

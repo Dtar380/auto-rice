@@ -43,7 +43,6 @@ Rectangle {
                 height: 40
                 text: userModel.lastUser
                 font.pixelSize: 14
-                placeholderText: "Username"
 
                 Keys.onReturnPressed: passwordField.focus = true
             }
@@ -53,9 +52,8 @@ Rectangle {
                 width: parent.width
                 height: 40
                 font.pixelSize: 14
-                placeholderText: "Password"
 
-                Keys.onReturnPressed: sddm.login(nameField.text, passwordField.text, sessionIndex)
+                Keys.onReturnPressed: sddm.login(nameField.text, passwordField.text, 0)
             }
 
             Button {
@@ -67,7 +65,7 @@ Rectangle {
                 textColor: config.buttonText
                 activeColor: config.accentColor
 
-                onClicked: sddm.login(nameField.text, passwordField.text, sessionIndex)
+                onClicked: sddm.login(nameField.text, passwordField.text, 0)
             }
         }
     }
