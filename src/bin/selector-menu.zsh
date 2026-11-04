@@ -20,14 +20,49 @@ local WALLPAPERS_DIR="${RICE_DIR}/wallpapers"
 
 local CURRENT_THEME_LINK="${RICE_DIR}/current_theme"
 
+# Runtime state, set by parse_args
+local MODE=""
+
 # =============================================================================
 #  HELPERS
 # =============================================================================
+usage() {
+    cat <<EOF
+Usage: ${0:t} [-h] {themes|wallpapers}
+
+  -h   show this help
+
+Displays a Rofi menu to select and apply active themes or wallpapers.
+EOF
+}
+
 # Helper function to capitalize theme names (e.g. "nord_dark" -> "Nord Dark")
 capitalize_name() {
     local raw_name="$1"
     # Replace underscores/hyphens with spaces and capitalize each word
     echo "${(C)${raw_name//[-_]/ }}"
+}
+
+# =============================================================================
+#  FUNCTION: PARSE ARGUMENTS
+# =============================================================================
+parse_args() {
+    local opt
+
+    while getopts ":h" opt; do
+        case "$opt" in
+            h) usage; exit 0 ;;
+            *) usage >&2; exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    if (( $# < 1 )); then
+        usage >&2
+        exit 1
+    fi
+
+    MODE="$1"
 }
 
 # =============================================================================
@@ -77,8 +112,10 @@ show_themes_menu() {
     selected_display_name=$(printf "%b" "$rofi_input" | rofi -dmenu -p "Theme" -show-icons)
 
     if [[ -n "$selected_display_name" ]]; then
-        local target_folder="${theme_map[$selected_display_name]}"
-        "$SCRIPT_DIR/theme-switcher.zsh" "$target_folder"
+        local target_folder="${theme_map[$selected_display_name]:-}"
+        if [[ -n "$target_folder" ]]; then
+            "$SCRIPT_DIR/theme-switcher.zsh" "$target_folder"
+        fi
     fi
 }
 
@@ -131,7 +168,6 @@ show_wallpapers_menu() {
         wallpaper_map[$label]="$wp"
 
         if [[ -n "$wp_file" ]]; then
-            # Hides visible text by passing empty display label or subtle index label
             rofi_input+="${label}\0icon\x1f${wp_file}\n"
         else
             rofi_input+="${label}\n"
@@ -166,17 +202,25 @@ show_wallpapers_menu() {
 }
 
 # =============================================================================
+#  FUNCTION: RUN
+# =============================================================================
+run() {
+    case "$MODE" in
+        themes)
+            show_themes_menu
+            ;;
+        wallpapers)
+            show_wallpapers_menu
+            ;;
+        *)
+            usage >&2
+            exit 1
+            ;;
+    esac
+}
+
+# =============================================================================
 #  MAIN
 # =============================================================================
-case "${1:-}" in
-    themes)
-        show_themes_menu
-        ;;
-    wallpapers)
-        show_wallpapers_menu
-        ;;
-    *)
-        echo "Usage: selector-menu {themes|wallpapers}"
-        exit 1
-        ;;
-esac
+parse_args "$@"
+run
