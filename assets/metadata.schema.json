@@ -43,7 +43,7 @@
     "palette": {
       "type": "object",
       "description": "Color palette definitions used by generator scripts to build app configs",
-      "required": ["background", "foreground", "accent", "selection", "colors"],
+      "required": ["background", "foreground", "accent", "selection", "text", "subtext", "colors"],
       "properties": {
         "background": {
           "type": "string",
@@ -65,13 +65,36 @@
           "pattern": "^#([0-9a-fA-F]{6})$",
           "description": "Selection/highlight background color (HEX format, e.g., #434c5e)"
         },
+        "text": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Primary text color (HEX format, e.g., #e5e9f0)"
+        },
+        "subtext": {
+          "type": "string",
+          "pattern": "^#([0-9a-fA-F]{6})$",
+          "description": "Secondary text color (HEX format, e.g., #d8dee9)"
+        },
         "colors": {
           "type": "object",
           "description": "Standard 16-color ANSI terminal palette",
           "required": [
-            "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-            "bright_black", "bright_red", "bright_green", "bright_yellow",
-            "bright_blue", "bright_magenta", "bright_cyan", "bright_white"
+            "black",
+            "red",
+            "green",
+            "yellow",
+            "blue",
+            "magenta",
+            "cyan",
+            "white",
+            "bright_black",
+            "bright_red",
+            "bright_green",
+            "bright_yellow",
+            "bright_blue",
+            "bright_magenta",
+            "bright_cyan",
+            "bright_white"
           ],
           "properties": {
             "black": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
@@ -82,14 +105,38 @@
             "magenta": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
             "cyan": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
             "white": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_black": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_red": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_green": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_yellow": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_blue": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_magenta": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_cyan": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" },
-            "bright_white": { "type": "string", "pattern": "^#([0-9a-fA-F]{6})$" }
+            "bright_black": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_red": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_green": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_yellow": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_blue": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_magenta": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_cyan": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            },
+            "bright_white": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{6})$"
+            }
           },
           "additionalProperties": false
         }

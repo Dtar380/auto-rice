@@ -14,6 +14,8 @@
         "foreground": "#e5e9f0",
         "accent": "#81a1c1",
         "selection": "#88c0d0",
+        "text": "#e5e9f0",
+        "subtext": "#d8dee9",
         "colors": {
             "black": "#2e3440",
             "red": "#bf616a",

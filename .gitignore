@@ -1,2 +1,6 @@
 .vscode
 import
+
+build
+_build
+.venv

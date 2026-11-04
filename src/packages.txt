@@ -31,6 +31,8 @@ hyprpolkitagent              # Authentication agent — lets GUI apps request el
 # Login/display manager
 #==============================================================================
 sddm                         # display manager (login screen)
+qt5-graphicaleffects         # Graphicall effects (login screen theming)
+qt5-quickcontrols2           # Quick Controls (login screen theming)
 
 #==============================================================================
 # Qt app support

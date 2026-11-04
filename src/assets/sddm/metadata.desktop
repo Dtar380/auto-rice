@@ -3,5 +3,5 @@ Name=Rice Active Theme
 Description=Dynamic custom SDDM theme for auto-rice
 Author=Dtar380
 Version=0.1
-MainScript=main.qml
+MainScript=Main.qml
 ConfigFile=colors.conf
