@@ -55,6 +55,20 @@ FAILED_SERVICES=()
 SKIPPED_PHASES=()
 
 # =============================================================================
+#  HELPER
+# =============================================================================
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [-h] [--check | --run | --resume]
+
+  --check   Preflight checks only, no changes
+  --run     Full install (default)
+  --resume  Resume from last successful phase
+  -h        Show this help
+EOF
+}
+
+# =============================================================================
 #  LOGGER
 # =============================================================================
 # Send all output to stdout and the log file
@@ -191,6 +205,37 @@ phase_run() {
     log_step "$phase"
     "$@"
     phase_mark_done "$phase"
+}
+
+# =============================================================================
+#  FUNCTION: PARSE ARGUMENTS
+# =============================================================================
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --check)
+                MODE="check"
+                shift
+                ;;
+            --run)
+                MODE="run"
+                shift
+                ;;
+            --resume)
+                MODE="resume"
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                usage >&2
+                exit 1
+                ;;
+        esac
+    done
 }
 
 # =============================================================================
@@ -820,6 +865,7 @@ do_finalize() {
         log_info "Configuring SDDM active theme slot..."
         local sddm_active_slot="/usr/share/sddm/themes/rice-active"
         sudo mkdir -p "$sddm_active_slot"
+        sudo chown -R $USER:$USER "$sddm_active_slot"
 
         # 1. Copy master SDDM layout templates from repo assets
         local sddm_assets_dir="$SCRIPT_DIR/assets/sddm"
@@ -923,25 +969,10 @@ print_report() {
 }
 
 # =============================================================================
-#  ARGUMENT PARSING
-# =============================================================================
-case "${1:-}" in
-    --check)  MODE="check" ;;
-    --run)    MODE="run" ;;
-    --resume) MODE="resume" ;;
-    "")       MODE="run" ;;
-    *)
-        echo "Usage: $0 [--check | --run | --resume]"
-        echo "  --check   Preflight checks only, no changes"
-        echo "  --run     Full install (default)"
-        echo "  --resume  Resume from last successful phase"
-        exit 1
-        ;;
-esac
-
-# =============================================================================
 #  MAIN
 # =============================================================================
+parse_args "$@"
+
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Rice Installer v${SCRIPT_VERSION} — mode: ${MODE^^}"

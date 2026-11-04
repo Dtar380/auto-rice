@@ -35,7 +35,6 @@ Switches the active theme, compiles configurations, reloads applications, and sy
 EOF
 }
 
-# Simple log helpers if not defined globally
 log_info()  { echo -e "\033[34m[INFO]\033[0m $1"; }
 log_ok()    { echo -e "\033[32m[OK]\033[0m $1"; }
 log_warn()  { echo -e "\033[33m[WARN]\033[0m $1"; }
@@ -57,7 +56,7 @@ parse_args() {
     if (( $# < 1 )); then
         usage >&2
         exit 1
-    }
+    fi
 
     TARGET_THEME_INPUT="$1"
 
@@ -146,20 +145,12 @@ apply_theme() {
 
     # 5. Sync theme SDDM template files if theme provides an sddm/ folder
     if [[ -d "$RESOLVED_THEME_DIR/sddm" ]]; then
-        sudo mkdir -p "$SDDM_ACTIVE_DIR"
-        sudo cp -r "$RESOLVED_THEME_DIR/sddm/"* "$SDDM_ACTIVE_DIR/" 2>/dev/null || true
+        mkdir -p "$SDDM_ACTIVE_DIR"
+        cp -r "$RESOLVED_THEME_DIR/sddm/"* "$SDDM_ACTIVE_DIR/" 2>/dev/null || true
 
         # Mirror wallpaper into SDDM directory if it exists
         if [[ -n "$default_wp_name" && -f "$default_wp_file" ]]; then
-            sudo cp -L "$default_wp_file" "$SDDM_ACTIVE_DIR/background.png" 2>/dev/null || true
-        fi
-
-        # Write SDDM configuration drop-in only if it does not already exist
-        local sddm_conf="/etc/sddm.conf.d/theme.conf"
-        if [[ ! -f "$sddm_conf" ]]; then
-            sudo mkdir -p /etc/sddm.conf.d
-            echo -e "[Theme]\nCurrent=rice-active" | sudo tee "$sddm_conf" >/dev/null
-            log_ok "Created SDDM theme configuration drop-in."
+            cp -L "$default_wp_file" "$SDDM_ACTIVE_DIR/background.png" 2>/dev/null || true
         fi
     fi
 
