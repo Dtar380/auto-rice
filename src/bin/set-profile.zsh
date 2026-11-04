@@ -7,9 +7,9 @@ set -euo pipefail
 # =============================================================================
 local IMAGE_PATH=""
 local FORCE_CROP=0
-local USER_NAME="${USER}"
-local DEST_DIR="/var/lib/AccountsService/icons"
-local DEST_FILE="${DEST_DIR}/${USER_NAME}"
+local DEST_DIR="$HOME"
+local FACE_FILE="${DEST_DIR}/.face"
+local FACE_ICON_FILE="${DEST_DIR}/.face.icon"
 
 # =============================================================================
 #  HELPERS
@@ -21,7 +21,7 @@ Usage: ${0:t} [-f] <image_path>
   -f   force square crop using ImageMagick (convert) if available
   -h   show this help
 
-Updates the user profile picture for SDDM and AccountsService.
+Updates the user profile picture by copying/linking to ~/.face and ~/.face.icon.
 EOF
 }
 
@@ -54,7 +54,7 @@ parse_args() {
 }
 
 # =============================================================================
-#  FUNCTION: PROCESS & UPDATE PROFILE
+#  FUNCTION: UPDATE PROFILE
 # =============================================================================
 update_profile() {
     local source_img="$IMAGE_PATH"
@@ -71,31 +71,17 @@ update_profile() {
         fi
     fi
 
-    echo "Updating profile picture for user '${USER_NAME}'..."
+    echo "Updating profile picture in home directory..."
 
-    # Ensure target directory exists and copy image
-    sudo mkdir -p "$DEST_DIR"
-    sudo cp "$source_img" "$DEST_FILE"
-    sudo chmod 644 "$DEST_FILE"
+    # Copy the processed image directly to ~/.face and ~/.face.icon
+    cp "$source_img" "$FACE_FILE"
+    cp "$source_img" "$FACE_ICON_FILE"
+    chmod 644 "$FACE_FILE" "$FACE_ICON_FILE"
 
     # Clean up temporary file if created
     [[ -n "$temp_img" && -f "$temp_img" ]] && rm -f "$temp_img"
 
-    # Notify AccountsService via DBus
-    if command -v busctl &> /dev/null; then
-        sudo busctl call org.freedesktop.Accounts \
-            "/org/freedesktop/Accounts/User$(id -u)" \
-            org.freedesktop.Accounts.User \
-            SetIconFile s "$DEST_FILE"
-    elif command -v dbus-send &> /dev/null; then
-        sudo dbus-send --system --print-reply \
-            --dest=org.freedesktop.Accounts \
-            "/org/freedesktop/Accounts/User$(id -u)" \
-            org.freedesktop.Accounts.User.SetIconFile \
-            string:"$DEST_FILE"
-    fi
-
-    echo "Profile picture successfully updated!"
+    echo "Profile picture successfully updated to ~/.face and ~/.face.icon!"
 }
 
 # =============================================================================
