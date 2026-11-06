@@ -1,7 +1,8 @@
-[SddmTheme]
+[SddmGreeterTheme]
 Name=Rice Active Theme
 Description=Dynamic custom SDDM theme for auto-rice
 Author=Dtar380
 Version=0.1
+QtVersion=6
 MainScript=Main.qml
 ConfigFile=colors.conf
