@@ -865,7 +865,7 @@ do_finalize() {
         log_info "Configuring SDDM active theme slot..."
         local sddm_active_slot="/usr/share/sddm/themes/rice-active"
         sudo mkdir -p "$sddm_active_slot"
-	sudo chmod -R a+rX "$sddm_active_slot"
+	    sudo chmod -R a+rX "$sddm_active_slot"
         sudo chown -R $USER:$USER "$sddm_active_slot"
 
         # 1. Copy master SDDM layout templates from repo assets
