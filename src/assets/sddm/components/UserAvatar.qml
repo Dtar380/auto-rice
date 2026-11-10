@@ -7,7 +7,7 @@ Item {
 
     property url source
     property url fallback
-    property real ringWidth: 1
+    property real ringWidth: 2
 
     Item {
         id: imageContainer

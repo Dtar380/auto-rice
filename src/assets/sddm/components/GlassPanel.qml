@@ -9,7 +9,7 @@ Item {
     property real radius: height / 4
     property color tint: Qt.rgba(Config.textColor.r, Config.textColor.g, Config.textColor.b, 0.25)
     property color borderColor: Qt.rgba(Config.black.r, Config.black.g, Config.black.b, 0.5)
-    property real borderWidth: 1
+    property real borderWidth: 2
     property real blurAmount: 1.0
     property int blurMax: 24
 
