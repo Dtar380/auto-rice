@@ -888,9 +888,9 @@ do_finalize() {
         fi
 
         # Write the SDDM configuration drop-in file
-        if [[ -d "$sddm_assets_dir/main.qml" ]] && [[ -s "$sddm_assets_dir/main.qml" ]]; then
-            sudo mkdir -p /etc/sddm.conf.d
-            echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
+        if [[ -d "$sddm_assets_dir/Main.qml" ]] && [[ -s "$sddm_assets_dir/Main.qml" ]]; then
+            sudo touch -p /etc/sddm.conf
+            echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf >/dev/null
             log_ok "SDDM configured to use dynamic 'rice-active' theme."
         else
             log_warn "SDDM custom theme main.qml is missing or empty. Skipping custom theme activation."

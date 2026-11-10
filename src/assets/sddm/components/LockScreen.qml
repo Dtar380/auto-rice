@@ -19,14 +19,12 @@ Item {
     }
 
     Clock {
-        screenHeight: lockRoot.height
         anchors.top: parent.top
         anchors.topMargin: parent.height * 0.25
         anchors.horizontalCenter: parent.horizontalCenter
     }
 
     UnlockHint {
-        screenHeight: lockRoot.height
         anchors.top: parent.top
         anchors.topMargin: parent.height * 0.8
         anchors.horizontalCenter: parent.horizontalCenter
