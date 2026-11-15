@@ -103,6 +103,6 @@ eval "$(oh-my-posh init zsh --config "${HOME}/.local/share/rice/current_theme/oh
 # =============================================================================
 #  WELCOME
 # =============================================================================
-[[ -z "$TMUX" && "$SHLVL" -eq 1 ]]
-
-clear && fastfetch
+if [[ -z "$TMUX" && "$SHLVL" -eq 1 ]]; then
+    clear && fastfetch
+fi

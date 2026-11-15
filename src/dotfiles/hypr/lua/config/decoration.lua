@@ -9,23 +9,24 @@ hl.config({
 		rounding_power = 2,
 
 		active_opacity = 0.85,
-		inactive_opacity = 0.75,
+		inactive_opacity = 0.66,
 
 		shadow = {
 			enabled = true,
-			range = 12,
+			range = 16,
 			render_power = 4,
-			color = colors.rgba(colors.raw.black, "80"),
+			color = colors.rgba(colors.raw.black, "d9"),
 		},
 
 		blur = {
+
 			enabled = true,
-			size = 12,
+			size = 4,
 			passes = 4,
-			noise = 0.125,
-			vibrancy = 0.2,
-			brightness = 0.85,
-			contrast = 1.3,
+			noise = 0.05,
+			vibrancy = 0.25,
+			brightness = 0.9,
+			contrast = 1.2,
 			special = true,
 			new_optimizations = true,
 			popups = true,

@@ -836,12 +836,17 @@ do_rice_setup() {
         fi
     fi
 
-    # Link the cursor theme if it exists in the theme directory
-    local cursor_dir="$active_theme_link/cursor"
-    if [[ ! -e "$active_cursor_link" ]] && [[ -d "$active_theme_link/cursor" ]]; then
-        ln -sfn "$cursor_dir" "$active_cursor_link"
-        log_ok "Set the default cursor theme to: $cursor_dir"
+    if command -v awww &>/dev/null; then
+        awww img "$TARGET_WP" >/dev/null 2>&1
     fi
+
+# TODO: Uncomment when added a cursor
+    # Link the cursor theme if it exists in the theme directory
+#    local cursor_dir="$active_theme_link/cursor"
+#    if [[ ! -e "$active_cursor_link" ]] && [[ -d "$active_theme_link/cursor" ]]; then
+#        ln -sfn "$cursor_dir" "$active_cursor_link"
+#        log_ok "Set the default cursor theme to: $cursor_dir"
+#    fi
 
     # Yazi
     _link_theme_file "yazi" "$active_theme_link/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"

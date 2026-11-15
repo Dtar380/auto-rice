@@ -73,7 +73,6 @@ capture() {
     esac
 
     if (( SAVE )); then
-        resolve_screenshots_dir
         mkdir -p "$SCREENSHOTS_DIR"
 
         local file="$SCREENSHOTS_DIR/$(date +'%Y-%m-%d_%H-%M-%S').png"

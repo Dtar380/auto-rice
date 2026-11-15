@@ -20,7 +20,7 @@ end
 -- Turns any number into a valid workspace id (wraps or clamps)
 local function resolve(n)
     if M.wrap then
-        return ((n - 1) % M.nax) + 1
+        return ((n - 1) % M.max) + 1
     end
     return math.max(1, math.min(M.max, n))
 end

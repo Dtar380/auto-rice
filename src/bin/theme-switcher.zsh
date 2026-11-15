@@ -138,11 +138,12 @@ apply_theme() {
         fi
     fi
 
+# TODO: Uncomment when added a cursor
     # 4. Update cursor theme
-    local cursor_theme_dir="$RESOLVED_THEME_DIR/cursor"
-    if [[ -d "$cursor_theme_dir" ]]; then
-        ln -sfn "$cursor_theme_dir" "$CURRENT_CURSOR_LINK"
-    fi
+#    local cursor_theme_dir="$RESOLVED_THEME_DIR/cursor"
+#    if [[ -d "$cursor_theme_dir" ]]; then
+#        ln -sfn "$cursor_theme_dir" "$CURRENT_CURSOR_LINK"
+#    fi
 
     # 5. Sync theme SDDM template files if theme provides an sddm/ folder
     if [[ -d "$RESOLVED_THEME_DIR/sddm" ]]; then

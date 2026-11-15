@@ -15,6 +15,9 @@ local editor      = "nvim"
 local mainMod = "SUPER"
 
 -- *** BINDS ***
+-- Close hyprland
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+
 -- Windows
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
@@ -27,6 +30,12 @@ hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(editor))
+
+-- Custom Scripts
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("selector-menu.zsh wallpapers"))
+hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("selector-menu.zsh themes"))
+hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("screenshot.zsh -sc full"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("screenshot.zsh -sc region"))
 
 -- Focus
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
