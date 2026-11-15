@@ -36,6 +36,7 @@ hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("selector-menu.zsh wallpapers"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("selector-menu.zsh themes"))
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("screenshot.zsh -sc full"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("screenshot.zsh -sc region"))
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a -f hex -q -u 64 -d -s 6"))
 
 -- Focus
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
