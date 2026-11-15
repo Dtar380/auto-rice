@@ -60,6 +60,7 @@ tmux                         # Terminal multiplexer
 fastfetch                    # system information tool similar to neofetch
 oh-my-posh                   # customizable and advanced shell prompt
 fzf                          # fuzzy finder for the terminal
+fd                           # file searcher
 lsd                          # modern ls replacement with colors and icons
 bat                          # enhanced cat with syntax highlighting and line numbers
 zoxide                       # smart and fast directory navigation
@@ -71,6 +72,12 @@ pamixer                      # PipeWire/PulseAudio volume control from CLI and s
 # File explorer
 #==============================================================================
 yazi                         # terminal-based file manager
+ueberzugpp                   # Image rendering backend for Yazi
+poppler-glib                 # Compat for ueberzugpp
+openslide                    # Compat for ueberzugpp
+poppler                      # PDF previews on Yazi
+7zip                         # Zip tool, helps viewing inside a Zip file on Yazi
+resvg                        # SVG previews on Yazi
 
 #==============================================================================
 # Multimedia

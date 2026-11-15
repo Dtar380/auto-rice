@@ -40,9 +40,10 @@ readonly -a PHASES=(
     zsh
     services
     packages
+    ueberzugpp_fix
     dotfiles
     rice_setup
-#    keyboard  *** COMMENTED OUT BECAUSE IT'S NOT IMPLEMENTED YET ***
+    keyboard
     finalize
 )
 
@@ -289,9 +290,21 @@ do_preflight() {
         fi
     fi
 
+    # Check required tools exist
+    local required_tools=(git lspci localectl pacman curl)
+    for tool in "${required_tools[@]}"; do
+        if ! command -v "$tool" &>/dev/null; then
+            log_error "Required tool not found: $tool"
+            (( ++errors ))
+        fi
+    done
+    if [[ $errors -eq 0 ]] || [[ "${#required_tools[@]}" -gt 0 ]]; then
+        log_ok "Required tools check passed."
+    fi
+
     # Check internet connectivity
-    if ping -c "ping.archlinux.org" > /dev/null 2>&1; then
-        log_error "No internet connection (archlinux.org unreachable)."
+    if ! curl -fsI --max-time 5 https://ping.archlinux.org &>/dev/null; then
+        log_error "No internet connection (ping.archlinux.org unreachable)."
         (( ++errors ))
     else
         log_ok "Internet connection available."
@@ -305,18 +318,6 @@ do_preflight() {
         (( ++errors ))
     else
         log_ok "Disk space OK: ${free_mb}MB free."
-    fi
-
-    # Check required tools exist
-    local required_tools=(git lspci localectl pacman)
-    for tool in "${required_tools[@]}"; do
-        if ! command -v "$tool" &>/dev/null; then
-            log_error "Required tool not found: $tool"
-            (( ++errors ))
-        fi
-    done
-    if [[ $errors -eq 0 ]] || [[ "${#required_tools[@]}" -gt 0 ]]; then
-        log_ok "Required tools check passed."
     fi
 
     # Check script is run from its own directory
@@ -666,6 +667,53 @@ do_packages() {
 }
 
 # =============================================================================
+#  PHASE: UEBERZUGPP PR293 FIX FOR HYPRLAND
+# =============================================================================
+# ? NOTE: This is temporary until PR293 gets merged and released into a ueberzugpp build
+readonly UEBERZUGPP_BASE_SHA="f05dd64dfe95164c56079408d4e61b80b34f571f"
+
+_build_ueberzugpp_fix() {
+    local dir="/tmp/ueberzugpp-build-$$"
+    local patch="$SCRIPT_DIR/assets/patches/ueberzugpp-pr293.patch"
+    rm -rf "$dir"
+    git clone https://github.com/jstkdng/ueberzugpp.git "$dir" &&
+    git -C "$dir" fetch origin pull/293/head &&
+    git -C "$dir" checkout "$UEBERZUGPP_BASE_SHA" &&
+    cmake -S "$dir" -B "$dir/build" -DCMAKE_BUILD_TYPE=Release -DENABLE_WAYLAND=ON &&
+    cmake --build "$dir/build" -j"$(nproc)" &&
+    sudo cmake --install "$dir/build"
+}
+
+do_ueberzugpp_fix() {
+    sudo pacman -S --needed --noconfirm cmake wayland wayland-protocols extra-cmake-modules
+
+    if ! _build_ueberzugpp_fix; then
+        log_warn "ueberzugpp PR build failed. Fix the issue and re-run with: ./install --resume."
+        rm -rf /tmp/ueberzugpp-build-*
+        return 1
+    fi
+    rm -rf /tmp/ueberzugpp-build-*
+
+    hash -r
+    local bin
+    bin="$(command -v ueberzugpp)"
+
+    local ldd_out
+    ldd_out="$(ldd "$bin")"
+    if grep -q libwayland-client <<<"$ldd_out"; then
+        log_ok "ueberzugpp built with Wayland support."
+    else
+        log_warn "ueberzugpp does not appear to have Wayland support."
+    fi
+
+    if [[ "$bin" == /usr/local/bin/ueberzugpp ]]; then
+        log_ok "Patched ueberzugpp is first in PATH."
+    else
+        log_warn "Expected /usr/local/bin/ueberzugpp first, found: $bin"
+    fi
+}
+
+# =============================================================================
 #  PHASE: DOTFILES
 # =============================================================================
 _sync_dir() {
@@ -789,6 +837,7 @@ do_rice_setup() {
     fi
 
     # Link the cursor theme if it exists in the theme directory
+    local cursor_dir="$active_theme_link/cursor"
     if [[ ! -e "$active_cursor_link" ]] && [[ -d "$active_theme_link/cursor" ]]; then
         ln -sfn "$cursor_dir" "$active_cursor_link"
         log_ok "Set the default cursor theme to: $cursor_dir"
@@ -895,8 +944,8 @@ do_finalize() {
         fi
 
         # Write the SDDM configuration drop-in file
-        if [[ -d "$sddm_assets_dir/Main.qml" ]] && [[ -s "$sddm_assets_dir/Main.qml" ]]; then
-            sudo touch -p /etc/sddm.conf
+        if [[ -f "$sddm_assets_dir/Main.qml" ]] && [[ -s "$sddm_assets_dir/Main.qml" ]]; then
+            sudo touch /etc/sddm.conf
             echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf >/dev/null
             log_ok "SDDM configured to use dynamic 'rice-active' theme."
         else
@@ -1007,9 +1056,10 @@ phase_run gpu_drivers        do_gpu_drivers
 phase_run zsh                do_zsh
 phase_run services           do_services
 phase_run packages           do_packages
+phase_run ueberzugpp_fix     do_ueberzugpp_fix
 phase_run dotfiles           do_dotfiles
 phase_run rice_setup         do_rice_setup
-# phase_run keyboard           do_keyboard  *** COMMENTED OUT BECAUSE IT'S NOT IMPLEMENTED YET ***
+phase_run keyboard           do_keyboard
 phase_run finalize           do_finalize
 
 # Print final report

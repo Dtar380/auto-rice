@@ -16,8 +16,8 @@ source "${ZINIT_HOME}/zinit.zsh"
 # =============================================================================
 #  SOURCES
 # =============================================================================
-source ".${XDG_CONFIG_HOME:-${HOME}/.config}/zsh/.zshenv"
-source ".${XDG_CONFIG_HOME:-${HOME}/.config}/zsh/yazi.zsh"
+source "${ZDOTDIR:-${HOME}/.config/zsh}/.zshenv"
+source "${ZDOTDIR:-${HOME}/.config/zsh}/yazi.zsh"
 
 # =============================================================================
 #  PLUGINS

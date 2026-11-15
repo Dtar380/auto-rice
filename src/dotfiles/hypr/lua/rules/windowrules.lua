@@ -96,3 +96,12 @@ hl.window_rule({
 	rounding = 0,
 	border_size = 0,
 })
+hl.window_rule({
+  name = "ueberzugpp",
+  match = { class = "^ueberzugpp_.*$" },
+  float = true,
+  no_focus = true,
+  no_anim = true,
+  border_size = 0,
+  no_shadow = true,
+})
