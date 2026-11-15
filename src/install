@@ -808,7 +808,7 @@ do_rice_setup() {
 #  PHASE: KEYBOARD
 # =============================================================================
 do_keyboard() {
-    local lua_file="$HOME/.config/hypr/lua/modules/input.lua"
+    local lua_file="$HOME/.config/hypr/lua/config/input.lua"
 
     if [ ! -f "$lua_file" ]; then
         log_error "File '$lua_file' not found!"
