@@ -759,6 +759,7 @@ do_rice_setup() {
     local default_theme="nord"
     local active_theme_link="$RICE_DIR/current_theme"
     local active_wallpaper_link="$RICE_DIR/current_wallpaper"
+    local active_cursor_link="$HOME/.local/share/icons/current_cursor"
 
     if [[ ! -e "$active_theme_link" ]] && [[ -d "$themes_dir/$default_theme" ]]; then
         ln -sfn "$themes_dir/$default_theme" "$active_theme_link"
@@ -787,6 +788,12 @@ do_rice_setup() {
         fi
     fi
 
+    # Link the cursor theme if it exists in the theme directory
+    if [[ ! -e "$active_cursor_link" ]] && [[ -d "$active_theme_link/cursor" ]]; then
+        ln -sfn "$cursor_dir" "$active_cursor_link"
+        log_ok "Set the default cursor theme to: $cursor_dir"
+    fi
+
     # Yazi
     _link_theme_file "yazi" "$active_theme_link/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
     # Rofi
@@ -801,7 +808,7 @@ do_rice_setup() {
 #  PHASE: KEYBOARD
 # =============================================================================
 do_keyboard() {
-    local lua_file="$HOME/.config/hypr/modules/input.lua"
+    local lua_file="$HOME/.config/hypr/lua/modules/input.lua"
 
     if [ ! -f "$lua_file" ]; then
         log_error "File '$lua_file' not found!"

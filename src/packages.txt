@@ -10,6 +10,7 @@ xdg-utils                    # Standard desktop utilities
 hyprcursor                   # Hyprland cursor theming
 hypridle                     # manages idle behavior, screen locking, and suspend
 hyprlock                     # screen locker
+hyprsunset                   # Blue light filter for hyprland
 grim                         # Screenshot utility
 slurp                        # Region selector for screenshots
 hyprpicker                   # color picker

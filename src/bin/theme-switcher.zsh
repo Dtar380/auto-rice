@@ -17,6 +17,7 @@ local WALLPAPERS_DIR="${RICE_DIR}/wallpapers"
 [[ ! -d "$WALLPAPERS_DIR" ]] && WALLPAPERS_DIR="$REPO_ROOT/src/assets/wallpapers"
 
 local CURRENT_THEME_LINK="${RICE_DIR}/current_theme"
+local CURRENT_CURSOR_LINK="${HOME}/.local/share/icons/current_cursor"
 local SDDM_ACTIVE_DIR="/usr/share/sddm/themes/rice-active"
 
 local TARGET_THEME_INPUT=""
@@ -117,16 +118,10 @@ apply_theme() {
     # 1. Update session theme symlink
     ln -sfn "$RESOLVED_THEME_DIR" "$CURRENT_THEME_LINK"
 
-    # 2. Compile app configurations if compiler script exists
-    local compiler_script="$REPO_ROOT/tools/rice-compiler.py"
-    if [[ -f "$compiler_script" ]]; then
-        python3 "$compiler_script" "$RESOLVED_THEME_DIR" || true
-    fi
-
-    # 3. Reload active applications
+    # 2. Reload active applications
     reload_active_apps
 
-    # 4. Extract default wallpaper and apply via wallpaper-switcher
+    # 3. Extract default wallpaper and apply via wallpaper-switcher
     local default_wp_name
     default_wp_name=$(jq -r '.default_wallpaper // empty' "$metadata_file" 2>/dev/null)
 
@@ -141,6 +136,12 @@ apply_theme() {
         if [[ -f "$default_wp_file" ]]; then
             "$SCRIPT_DIR/wallpaper-switcher.zsh" "$default_wp_file"
         fi
+    fi
+
+    # 4. Update cursor theme
+    local cursor_theme_dir="$RESOLVED_THEME_DIR/cursor"
+    if [[ -d "$cursor_theme_dir" ]]; then
+        ln -sfn "$cursor_theme_dir" "$CURRENT_CURSOR_LINK"
     fi
 
     # 5. Sync theme SDDM template files if theme provides an sddm/ folder
