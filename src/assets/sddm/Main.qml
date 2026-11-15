@@ -14,23 +14,42 @@ Item {
     states: [
         State {
             name: "lockState"
-            PropertyChanges { target: lockScreen; opacity: 1.0 }
-            PropertyChanges { target: loginScreen; opacity: 0.0 }
+            PropertyChanges { target: lockScreen; y: 0 }
+            PropertyChanges { target: loginScreen; y: root.height }
             PropertyChanges { target: backgroundEffect; blurMax: 24 }
         },
         State {
             name: "loginState"
-            PropertyChanges { target: lockScreen; opacity: 0.0 }
-            PropertyChanges { target: loginScreen; opacity: 1.0 }
+            PropertyChanges { target: lockScreen; y: -root.height }
+            PropertyChanges { target: loginScreen; y: 0 }
             PropertyChanges { target: backgroundEffect; blurMax: 8 }
         }
     ]
 
-    transitions: Transition {
-        enabled: true
-        PropertyAnimation { duration: 150; properties: "opacity" }
-        PropertyAnimation { duration: 400; properties: "blurMax" }
-    }
+    transitions: [
+        // Swipe up: lock screen leaves through the top, login screen rises in from the bottom
+        Transition {
+            from: "lockState"; to: "loginState"
+            SequentialAnimation {
+                ParallelAnimation {
+                    NumberAnimation { target: lockScreen; property: "y"; duration: 550; easing.type: Easing.InOutCubic }
+                    NumberAnimation { target: loginScreen; property: "y"; duration: 550; easing.type: Easing.InOutCubic }
+                    NumberAnimation { target: backgroundEffect; property: "blurMax"; duration: 550 }
+                }
+                // Make sure the password box is focused once the slide is done
+                ScriptAction { script: loginScreen.resetFocus() }
+            }
+        },
+        // Swipe down: login screen leaves through the bottom, lock screen comes down from the top
+        Transition {
+            from: "loginState"; to: "lockState"
+            ParallelAnimation {
+                NumberAnimation { target: lockScreen; property: "y"; duration: 550; easing.type: Easing.InOutCubic }
+                NumberAnimation { target: loginScreen; property: "y"; duration: 550; easing.type: Easing.InOutCubic }
+                NumberAnimation { target: backgroundEffect; property: "blurMax"; duration: 550 }
+            }
+        }
+    ]
 
     Image {
         id: backgroundImage
@@ -85,10 +104,14 @@ Item {
 
         LockScreen {
             id: lockScreen
-            anchors.fill: parent
-            opacity: 0.0
-            enabled: opacity > 0
-            focus: opacity > 0
+            // No anchors.fill: anchors would fight the y animation (same for the login screen below)
+            x: 0
+            y: 0
+            width: parent.width
+            height: parent.height
+            visible: y > -height
+            enabled: root.state === "lockState"
+            focus: root.state === "lockState"
 
             onLoginRequested: {
                 root.state = "loginState";
@@ -98,10 +121,13 @@ Item {
 
         LoginScreen {
             id: loginScreen
-            anchors.fill: parent
-            opacity: 0.0
-            enabled: opacity > 0
-            focus: opacity > 0
+            x: 0
+            y: root.height
+            width: parent.width
+            height: parent.height
+            visible: y < height
+            enabled: root.state === "loginState"
+            focus: root.state === "loginState"
 
             backgroundSource: backgroundImage
             userName: userList.currentItem ? userList.currentItem.userName : ""

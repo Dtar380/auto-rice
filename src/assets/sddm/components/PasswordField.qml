@@ -62,6 +62,7 @@ GlassPanel {
                 echoMode: TextInput.Password
                 passwordCharacter: "●"
                 selectByMouse: true
+                cursorVisible: activeFocus
 
                 onTextEdited: field.edited()
                 onAccepted: field.accepted()
