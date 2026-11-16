@@ -44,6 +44,8 @@ readonly -a PHASES=(
     dotfiles
     rice_setup
     keyboard
+    sddm
+    lockscreen
     finalize
 )
 
@@ -837,7 +839,7 @@ do_rice_setup() {
     fi
 
     if command -v awww &>/dev/null; then
-        awww img "$TARGET_WP" >/dev/null 2>&1
+        awww img "$active_wallpaper_link" >/dev/null 2>&1
     fi
 
 # TODO: Uncomment when added a cursor
@@ -888,26 +890,9 @@ do_keyboard() {
 }
 
 # =============================================================================
-#  PHASE: FINALIZE
+#  PHASE: SDDM
 # =============================================================================
-do_finalize() {
-    # Create standard user directories
-    if command -v xdg-user-dirs-update; then
-        log_info "Creating user directories..."
-        xdg-user-dirs-update
-        log_ok "User directories created."
-    else
-        log_warn "User directories couldn't be created."
-    fi
-
-    # Clean up only installer temp files and the paru build cache
-    log_info "Cleaning up installer temp files..."
-    rm -rf /tmp/paru-build-*
-    paru -Sc --noconfirm 2>/dev/null || true
-    # Deliberately leave $HOME/.cache alone: wiping it would destroy
-    # unrelated application state the user may want to keep
-    log_ok "Cleanup complete (user cache left intact)."
-
+do_sddm() {
     # Enable SDDM display manager and configure its theme slot
     if command -v sddm &>/dev/null; then
         log_info "Enabling SDDM display manager..."
@@ -961,6 +946,71 @@ do_finalize() {
     else
         log_warn "SDDM not installed — display manager not enabled."
     fi
+}
+
+# =============================================================================
+#  PHASE: LOCKSCREEN (Quickshell; reuses the SDDM theme's components/assets)
+# =============================================================================
+do_lockscreen() {
+    local slot="/usr/share/sddm/themes/rice-active"
+    local dest="$HOME/.config/quickshell/lockscreen"
+
+    if [[ ! -f "$dest/shell.qml" ]]; then
+        log_error "Lockscreen files not found in $dest (did the dotfiles phase run?)"
+        return 1
+    fi
+
+    if [[ ! -d "$slot/components" ]]; then
+        log_warn "SDDM theme slot not found at $slot - skipping lockscreen links."
+        log_warn "Re-run './install --run' once SDDM is set up."
+        return 0
+    fi
+
+    mkdir -p "$dest/components"
+
+    # Shared data
+    ln -sfn "$slot/assets" "$dest/assets"
+    ln -sfn "$slot/colors.conf" "$dest/colors.conf"
+    [[ -e "$slot/colors.conf" ]] || log_warn "$slot/colors.conf does not exist yet; Config.qml will use its fallbacks."
+
+    # Shared components (everything except SDDM's Config.qml, which we replace)
+    find "$dest/components" -xtype l -delete      # drop links to removed components
+    local qmldir="$dest/components/qmldir"
+    echo "singleton Config 1.0 Config.qml" > "$qmldir"
+
+    local f name count=0
+    for f in "$slot"/components/*.qml; do
+        [[ -e "$f" ]] || continue
+        name="$(basename "$f")"
+        [[ "$name" == "Config.qml" ]] && continue
+        ln -sf "$f" "$dest/components/$name"
+        echo "${name%.qml} 1.0 $name" >> "$qmldir"
+        count=$((count + 1))
+    done
+
+    log_ok "Lockscreen ready: linked $count shared components (launch with: qs -c lockscreen)."
+}
+
+# =============================================================================
+#  PHASE: FINALIZE
+# =============================================================================
+do_finalize() {
+    # Create standard user directories
+    if command -v xdg-user-dirs-update; then
+        log_info "Creating user directories..."
+        xdg-user-dirs-update
+        log_ok "User directories created."
+    else
+        log_warn "User directories couldn't be created."
+    fi
+
+    # Clean up only installer temp files and the paru build cache
+    log_info "Cleaning up installer temp files..."
+    rm -rf /tmp/paru-build-*
+    paru -Sc --noconfirm 2>/dev/null || true
+    # Deliberately leave $HOME/.cache alone: wiping it would destroy
+    # unrelated application state the user may want to keep
+    log_ok "Cleanup complete (user cache left intact)."
 
     log_ok "Finalization complete."
 }
@@ -1065,6 +1115,8 @@ phase_run ueberzugpp_fix     do_ueberzugpp_fix
 phase_run dotfiles           do_dotfiles
 phase_run rice_setup         do_rice_setup
 phase_run keyboard           do_keyboard
+phase_run sddm               do_sddm
+phase_run lockscreen         do_lockscreen
 phase_run finalize           do_finalize
 
 # Print final report
