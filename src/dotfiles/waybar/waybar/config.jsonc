@@ -1,0 +1,134 @@
+{
+  "layer": "top",
+  "position": "top",
+
+  "modules-left": ["custom/archicon", "hyprland/workspaces"],
+  "modules-center": ["group/media"],
+  "modules-right": [
+    "network",
+    "pulseaudio",
+    "battery",
+    "clock",
+    "custom/notification",
+  ],
+
+  "custom/archicon": {
+    "format": "\uf303",
+    "tooltip": false,
+  },
+
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "on-click": "activate",
+    "all-outputs": false,
+    "persistent-workspaces": { "*": 4 },
+    "tooltip": false,
+  },
+
+  "group/media": {
+    "orientation": "horizontal",
+    "modules": [
+      "custom/prev",
+      "custom/playpause",
+      "custom/next",
+      "custom/title",
+    ],
+  },
+
+  "custom/prev": {
+    "format": "\uf048",
+    "on-click": "playerctl previous",
+    "tooltip": false,
+  },
+
+  "custom/next": {
+    "format": "\uf051",
+    "on-click": "playerctl next",
+    "tooltip": false,
+  },
+
+  "custom/playpause": {
+    "format": "{icon}",
+    "format-icons": {
+      "playing": "\uf04c",
+      "paused": "\uf04b",
+      "stopped": "\uf04b",
+    },
+    "return-type": "json",
+    "exec": "~/.local/bin/waybar/playpause.zsh",
+    "interval": 1,
+    "on-click": "playerctl play-pause",
+    "tooltip": false,
+  },
+
+  "custom/title": {
+    "exec": "~/.local/bin/waybar/title.zsh",
+    "escape": true,
+    "min-length": 30,
+    "max-length": 30,
+    "tooltip": false,
+  },
+
+  "network": {
+    "format-wifi": "\uf1eb  {signalStrength}%",
+    "format-ethernet": "\uf6ff  Wired",
+    "format-disconnected": "\uf071  Offline",
+    "min-length": 4,
+    "align": 0.5,
+    "on-click": "nm-connection-editor",
+    "tooltip": false,
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "\ueee8 mut",
+    "format-icons": {
+      "default": ["\uf026", "\uf027", "\uf028"],
+    },
+    "min-length": 4,
+    "align": 0.5,
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "tooltip": false,
+  },
+
+  "battery": {
+    "interval": 30,
+    "states": {
+      "warning": 30,
+      "critical": 15,
+    },
+    "format": "{capacity}% {icon}",
+    "format-charging": "{capacity}% \uf0e7",
+    "format-plugged": "{capacity}% \uf1e6",
+    "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
+    "min-length": 4,
+    "align": 0.5,
+    "tooltip": false,
+  },
+
+  "clock": {
+    "interval": 60,
+    "format": "\uf017  {:%a %d %H:%M}",
+    "tooltip": false,
+  },
+
+  "custom/notification": {
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "\uf0f3<span foreground='red'><sup>\uf111</sup></span>",
+      "none": "\uf0f3",
+      "dnd-notification": "\uf1f6<span foreground='red'><sup>\uf111</sup></span>",
+      "dnd-none": "\uf1f6",
+    },
+    "return-type": "json",
+    "exec": "~/.local/bin/waybar/mako.zsh",
+    "interval": 2,
+    "signal": 9,
+    "on-click": "makoctl restore",
+    "on-click-middle": "makoctl dismiss --all",
+    "on-click-right": "makoctl mode -t do-not-disturb; pkill -RTMIN+9 waybar",
+    "tooltip": false,
+  },
+}
