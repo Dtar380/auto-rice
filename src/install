@@ -733,7 +733,7 @@ _sync_dir() {
     rsync -av \
         --backup \
         --backup-dir="$BACKUP_DIR/$label" \
-        "$@" \                   # NEW
+        "$@" \
         "$src_dir/" "$dest_dir/"
     log_ok "$label sync complete."
 }
@@ -890,6 +890,8 @@ do_keyboard() {
 # =============================================================================
 do_greeter() {
     # TODO: Add greetd logic here
+    log_warn "Greeter phase not implemented yet."
+    return 0
 }
 
 # =============================================================================

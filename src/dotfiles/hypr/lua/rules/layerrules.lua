@@ -34,12 +34,3 @@ hl.layer_rule({
 	},
 	no_anim = true,
 })
-
--- Waybar
-hl.layer_rule({
-    match = {
-        namespace = "waybar",
-    },
-    blur = true,
-    ignore_alpha = 0.9,
-})

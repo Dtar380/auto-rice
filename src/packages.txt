@@ -27,6 +27,7 @@ hyprpolkitagent              # Authentication agent — lets GUI apps request el
 # Login/display manager
 #==============================================================================
 greetd                       # Login manager
+greetd-tuigreet              # TUI greeter as fallback
 
 #==============================================================================
 # Qt app support
@@ -79,7 +80,6 @@ resvg                        # SVG previews on Yazi
 #==============================================================================
 mpv                          # video and audio player
 playerctl                    # control media players from the terminal
-zscroll			             # scrolling titles
 ffmpeg                       # Video and audio manipulation library
 imagemagick                  # Image manipulation library
 
