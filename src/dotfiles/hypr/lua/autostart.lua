@@ -3,10 +3,9 @@
 -- ============================================================================
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("hyprsunset")
-    hl.exec_cmd("hypridle")
-    hl.exec_cmd("waybar")
+    hl.exec_cmd('awww-daemon & awww img "$HOME/.local/share/rice/current_wallpaper"')
+    hl.exec_cmd('hyprsunset')
+    hl.exec_cmd('hypridle')
 -- TODO: Add start processes
 end)
 

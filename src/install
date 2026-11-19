@@ -44,8 +44,7 @@ readonly -a PHASES=(
     dotfiles
     rice_setup
     keyboard
-    sddm
-    lockscreen
+    greeter
     finalize
 )
 
@@ -722,6 +721,7 @@ _sync_dir() {
     local label="$1"
     local src_dir="$2"
     local dest_dir="$3"
+    shift 3                      # NEW: anything left over goes to rsync
 
     if [[ ! -d "$src_dir" ]]; then
         log_warn "'$src_dir' not found, skipping $label sync."
@@ -730,10 +730,10 @@ _sync_dir() {
 
     mkdir -p "$dest_dir"
     log_info "Syncing $label: $src_dir → $dest_dir"
-    # --backup-dir keeps dated backups of anything overwritten
     rsync -av \
         --backup \
         --backup-dir="$BACKUP_DIR/$label" \
+        "$@" \                   # NEW
         "$src_dir/" "$dest_dir/"
     log_ok "$label sync complete."
 }
@@ -748,7 +748,9 @@ do_dotfiles() {
         for app_dir in "$SCRIPT_DIR/dotfiles"/*/; do
             local app
             app=$(basename "$app_dir")
-            _sync_dir "config/$app" "$app_dir" "$HOME/.config/$app"
+            local -a extra=()
+            [[ "$app" == "quickshell" ]] && extra=(--delete)    # NEW
+            _sync_dir "config/$app" "$app_dir" "$HOME/.config/$app" "${extra[@]}"
         done
         shopt -u nullglob
     else
@@ -838,10 +840,6 @@ do_rice_setup() {
         fi
     fi
 
-    if command -v awww &>/dev/null; then
-        awww img "$active_wallpaper_link" >/dev/null 2>&1
-    fi
-
 # TODO: Uncomment when added a cursor
     # Link the cursor theme if it exists in the theme directory
 #    local cursor_dir="$active_theme_link/cursor"
@@ -852,8 +850,6 @@ do_rice_setup() {
 
     # Yazi
     _link_theme_file "yazi" "$active_theme_link/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
-    # Rofi
-    _link_theme_file "rofi" "$active_theme_link/rofi/colors.rasi" "$HOME/.config/rofi/colors.rasi"
     # Btop
     _link_theme_file "btop" "$active_theme_link/btop/theme.theme" "$HOME/.config/btop/themes/rice-active.theme"
 
@@ -890,105 +886,10 @@ do_keyboard() {
 }
 
 # =============================================================================
-#  PHASE: SDDM
+#  PHASE: greeter
 # =============================================================================
-do_sddm() {
-    # Enable SDDM display manager and configure its theme slot
-    if command -v sddm &>/dev/null; then
-        log_info "Enabling SDDM display manager..."
-        # Try both possible unit names
-        if _unit_exists "sddm.service" 2>/dev/null || _unit_exists "sddm" 2>/dev/null; then
-            sudo systemctl enable sddm.service 2>/dev/null || sudo systemctl enable sddm 2>/dev/null || true
-            if sudo systemctl is-enabled sddm &>/dev/null || sudo systemctl is-enabled sddm.service &>/dev/null; then
-                log_ok "SDDM enabled successfully."
-            else
-                log_warn "SDDM may not be properly enabled. Try: sudo systemctl enable sddm"
-            fi
-        else
-            log_warn "SDDM service unit not found."
-        fi
-
-        log_info "Configuring SDDM active theme slot..."
-        local sddm_active_slot="/usr/share/sddm/themes/rice-active"
-        sudo mkdir -p "$sddm_active_slot"
-	    sudo chmod -R a+rX "$sddm_active_slot"
-        sudo chown -R $USER:$USER "$sddm_active_slot"
-
-        # 1. Copy master SDDM layout templates from repo assets
-        local sddm_assets_dir="$SCRIPT_DIR/assets/sddm"
-        if [[ -d "$SCRIPT_DIR/assets/sddm" ]]; then
-            sudo cp -rn "$SCRIPT_DIR/assets/sddm/"* "$sddm_active_slot/"
-        fi
-
-        # 2. Copy the active theme's SDDM color config if the theme provides one
-        local active_theme_link="$RICE_DIR/current_theme"
-        if [[ -f "$active_theme_link/sddm/colors.conf" ]]; then
-            sudo cp "$active_theme_link/sddm/colors.conf" "$sddm_active_slot/colors.conf"
-        fi
-
-        # 3. Mirror the initial active wallpaper into SDDM so it matches on first boot
-        local active_wallpaper="$RICE_DIR/current_wallpaper"
-        if [[ -L "$active_wallpaper" ]]; then
-            sudo cp -L "$active_wallpaper" "$sddm_active_slot/assets/background.png" 2>/dev/null || true
-            log_ok "Synced current wallpaper to SDDM background."
-        fi
-
-        # Write the SDDM configuration drop-in file
-        if [[ -f "$sddm_assets_dir/Main.qml" ]] && [[ -s "$sddm_assets_dir/Main.qml" ]]; then
-            sudo touch /etc/sddm.conf
-            echo -e "[Theme]\nCurrent=rice-active" | sudo tee /etc/sddm.conf >/dev/null
-            log_ok "SDDM configured to use dynamic 'rice-active' theme."
-        else
-            log_warn "SDDM custom theme main.qml is missing or empty. Skipping custom theme activation."
-        fi
-
-        log_ok "SDDM configured to use dynamic 'rice-active' theme."
-    else
-        log_warn "SDDM not installed — display manager not enabled."
-    fi
-}
-
-# =============================================================================
-#  PHASE: LOCKSCREEN (Quickshell; reuses the SDDM theme's components/assets)
-# =============================================================================
-do_lockscreen() {
-    local slot="/usr/share/sddm/themes/rice-active"
-    local dest="$HOME/.config/quickshell/lockscreen"
-
-    if [[ ! -f "$dest/shell.qml" ]]; then
-        log_error "Lockscreen files not found in $dest (did the dotfiles phase run?)"
-        return 1
-    fi
-
-    if [[ ! -d "$slot/components" ]]; then
-        log_warn "SDDM theme slot not found at $slot - skipping lockscreen links."
-        log_warn "Re-run './install --run' once SDDM is set up."
-        return 0
-    fi
-
-    mkdir -p "$dest/components"
-
-    # Shared data
-    ln -sfn "$slot/assets" "$dest/assets"
-    ln -sfn "$slot/colors.conf" "$dest/colors.conf"
-    [[ -e "$slot/colors.conf" ]] || log_warn "$slot/colors.conf does not exist yet; Config.qml will use its fallbacks."
-
-    # Shared components (everything except SDDM's Config.qml, which we replace)
-    find "$dest/components" -xtype l -delete      # drop links to removed components
-    local qmldir="$dest/components/qmldir"
-    echo "singleton Config 1.0 Config.qml" > "$qmldir"
-
-    local f name count=0
-    for f in "$slot"/components/*.qml; do
-        [[ -e "$f" ]] || continue
-        name="$(basename "$f")"
-        [[ "$name" == "Config.qml" ]] && continue
-        ln -sf "$f" "$dest/components/$name"
-        echo "${name%.qml} 1.0 $name" >> "$qmldir"
-        count=$((count + 1))
-    done
-
-    log_ok "Lockscreen ready: linked $count shared components (launch with: qs -c lockscreen)."
+do_greeter() {
+    # TODO: Add greetd logic here
 }
 
 # =============================================================================
@@ -1115,8 +1016,7 @@ phase_run ueberzugpp_fix     do_ueberzugpp_fix
 phase_run dotfiles           do_dotfiles
 phase_run rice_setup         do_rice_setup
 phase_run keyboard           do_keyboard
-phase_run sddm               do_sddm
-phase_run lockscreen         do_lockscreen
+phase_run greeter            do_greeter
 phase_run finalize           do_finalize
 
 # Print final report
