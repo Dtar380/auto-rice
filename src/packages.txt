@@ -10,18 +10,13 @@ xdg-utils                    # Standard desktop utilities
 hyprcursor                   # Hyprland cursor theming
 hypridle                     # manages idle behavior, screen locking, and suspend
 hyprsunset                   # Blue light filter for hyprland
-quickshell                   # Wayland QT shell toolkit (used for the lockscreen)
 grim                         # Screenshot utility
 slurp                        # Region selector for screenshots
 hyprpicker                   # color picker
+quickshell                   # Wayland QT shell toolkit
 awww                         # wallpaper engine
-rofi                         # launcher used to launch applications with a GUI
-mako                         # A lightweight notification daemon
 wl-clipboard                 # clipboard utilities for Wayland (terminal copy/paste)
 cliphist                     # clipboard history manager (requires wl-clipboard)
-waybar                       # customizable status bar
-eww                          # customizable widgets and desktop panels
-wlogout                      # Graphical logout/power/session menu
 
 #==============================================================================
 # System integration & authentication
@@ -31,7 +26,7 @@ hyprpolkitagent              # Authentication agent — lets GUI apps request el
 #==============================================================================
 # Login/display manager
 #==============================================================================
-sddm                         # display manager (login screen)
+greetd                       # Login manager
 qt5-graphicaleffects         # Graphicall effects (login screen theming)
 qt5-quickcontrols2           # Quick Controls (login screen theming)
 
@@ -40,6 +35,7 @@ qt5-quickcontrols2           # Quick Controls (login screen theming)
 #==============================================================================
 qt5ct                        # Qt5 theme/font/icon configuration tool
 qt6ct                        # Qt6 theme/font/icon configuration tool
+qt6-5compat                  # Qt6 compatibility with Qt5
 
 #==============================================================================
 # Fonts
@@ -67,6 +63,7 @@ zoxide                       # smart and fast directory navigation
 ripgrep                      # fast text search in files
 libnotify                    # Provides notify-send — used by rice scripts for popups
 pamixer                      # PipeWire/PulseAudio volume control from CLI and scripts
+cava			             # Music bar viewer
 
 #==============================================================================
 # File explorer
