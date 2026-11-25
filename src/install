@@ -347,6 +347,20 @@ do_preflight() {
 # =============================================================================
 #  PHASE: BASE SYSTEM
 # =============================================================================
+_detect_header_pkgs() {
+    local pkg base
+    local -a found=()
+    for pkg in linux linux-lts linux-zen linux-hardened linux-rt linux-rt-lts; do
+        if pacman -Qq "$pkg" &>/dev/null; then found+=("${pkg}-headers"); fi
+    done
+    # Fallback for kernels not listed above (cachyos, xanmod, ...)
+    if (( ${#found[@]} == 0 )) && [[ -r "/usr/lib/modules/$(uname -r)/pkgbase" ]]; then
+        base="$(< "/usr/lib/modules/$(uname -r)/pkgbase")"
+        found+=("${base}-headers")
+    fi
+    if (( ${#found[@]} )); then printf '%s\n' "${found[@]}"; fi
+}
+
 do_base_system() {
     # Update the system
     log_info "Updating system..."
@@ -358,31 +372,23 @@ do_base_system() {
     if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
         sudo sed -i '/\[multilib\]/{n;s/^#//}' /etc/pacman.conf
         sudo sed -i 's/^#\(\[multilib\]\)/\1/' /etc/pacman.conf
-        sudo pacman -Sy --noconfirm
+        sudo pacman -Syu --noconfirm
         log_ok "multilib enabled."
     else
         log_ok "multilib already enabled."
     fi
 
-    # Detect kernel package (handle multiple kernels: pick the first running one)
-    local kernel_type=$(uname -r | sed -E 's/^[0-9.]+-//; s/[0-9].*//; s/-$//')
-    local header_pkg=""
-    if [[ -n "$kernel_type" && "$kernel_type" != "arch" ]]; then
-        header_pkg="linux-${kernel_type}-headers"
-    else
-        header_pkg="linux-headers"
-    fi
-
-    if [[ -z "$kernel_type" ]]; then
-        log_warn "Could not detect kernel package. Skipping headers installation."
-    else
-        log_info "Detected kernel: $kernel_type"
-    fi
-
-    # Install headers and basic packages
     log_info "Installing base dependencies..."
-    local base_packages=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
-    [[ -n "$header_pkg" ]] && base_packages+=("$header_pkg")
+    local -a base_packages=(base-devel pciutils usbutils lshw git curl wget unzip vim rsync lua python jq)
+    local -a header_pkgs
+    mapfile -t header_pkgs < <(_detect_header_pkgs)
+
+    if (( ${#header_pkgs[@]} )); then
+        log_info "Kernel headers: ${header_pkgs[*]}"
+        base_packages+=("${header_pkgs[@]}")
+    else
+        log_warn "No installed kernel package found; skipping headers (DKMS drivers won't build)."
+    fi
 
     sudo pacman -S --needed --noconfirm "${base_packages[@]}"
     log_ok "Base dependencies installed."
@@ -497,13 +503,13 @@ do_gpu_drivers() {
         *amd*|*radeon*)
             log_info "Installing AMD drivers (Mesa/open source)..."
             sudo pacman -S --needed --noconfirm \
-                mesa xf86-video-amdgpu libva-mesa-driver vulkan-radeon lib32-mesa lib32-vulkan-radeon
+                mesa vulkan-radeon lib32-mesa lib32-vulkan-radeon
             log_ok "AMD drivers installed."
             ;;
         *intel*)
             log_info "Installing Intel drivers (Mesa/open source)..."
             sudo pacman -S --needed --noconfirm \
-                mesa intel-media-driver libva-intel-driver vulkan-intel lib32-mesa
+                mesa intel-media-driver vulkan-intel lib32-mesa lib32-vulkan-intel
             log_ok "Intel drivers installed."
             ;;
         *)
@@ -594,13 +600,17 @@ do_services() {
     sudo pacman -S --needed --noconfirm \
         networkmanager network-manager-applet \
         bluez bluez-utils bluetui \
-        pipewire pipewire-audio pipewire-pulse wireplumber pavucontrol
+        pipewire pipewire-audio pipewire-pulse wireplumber pavucontrol \
+        power-profiles-daemon upower
     log_ok "Service packages installed."
 
     log_info "Enabling services..."
 
     # Enable NetworkManager
     _enable_system_service NetworkManager
+
+    # Enable power-profiles-daemon
+    _enable_system_service power-profiles-daemon
 
     # Enable bluetooth only if hardware is present
     if rfkill list bluetooth &>/dev/null || lsusb 2>/dev/null | grep -qi bluetooth || \
@@ -611,10 +621,12 @@ do_services() {
     fi
 
     # Enable PipeWire user services
-    _enable_user_service pipewire
+    _enable_user_service pipewire.socket
     _enable_user_service pipewire-audio
-    _enable_user_service pipewire-pulse
+    _enable_user_service pipewire-pulse.socket
     _enable_user_service wireplumber
+
+    _enable_user_service upower
 
     log_ok "Service configuration complete."
 }
@@ -680,6 +692,7 @@ _build_ueberzugpp_fix() {
     git clone https://github.com/jstkdng/ueberzugpp.git "$dir" &&
     git -C "$dir" fetch origin pull/293/head &&
     git -C "$dir" checkout "$UEBERZUGPP_BASE_SHA" &&
+    git -C "$dir" apply "$patch" &&
     cmake -S "$dir" -B "$dir/build" -DCMAKE_BUILD_TYPE=Release -DENABLE_WAYLAND=ON &&
     cmake --build "$dir/build" -j"$(nproc)" &&
     sudo cmake --install "$dir/build"
@@ -833,7 +846,7 @@ do_rice_setup() {
     else
         # Fall back to the first available image if metadata isn't parsed
         local first_wallpaper
-        first_wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -n 1)
+        first_wallpaper=$(find "$wallpapers_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) -print -quit)
         if [[ -n "$first_wallpaper" ]]; then
             ln -sfn "$first_wallpaper" "$active_wallpaper_link"
             log_ok "Set fallback active wallpaper."
@@ -861,37 +874,49 @@ do_rice_setup() {
 # =============================================================================
 do_keyboard() {
     local lua_file="$HOME/.config/hypr/lua/config/input.lua"
-
-    if [ ! -f "$lua_file" ]; then
+    if [[ ! -f "$lua_file" ]]; then
         log_error "File '$lua_file' not found!"
         return 1
     fi
 
-    local system_layout=$(localectl status 2>/dev/null | awk '/X11 Layout:/ {print $3}')
+    local status layout variant valid l ok=1
+    local -a parts
+    status="$(localectl status 2>/dev/null || true)"
+    layout="$(awk '/X11 Layout:/ {print $3}' <<<"$status")"
+    variant="$(awk '/X11 Variant:/ {print $3}' <<<"$status")"
+    [[ -z "$layout" ]] && layout="$(awk '/VC Keymap:/ {print $3}' <<<"$status")"
 
-    if [ -z "$system_layout" ]; then
-        system_layout=$(localectl status 2>/dev/null | awk '/VC Keymap:/ {print $3}')
+    # Accept only real XKB layouts (every comma-separated entry)
+    valid="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
+    IFS=',' read -ra parts <<<"$layout"
+    (( ${#parts[@]} )) || ok=0
+    for l in "${parts[@]}"; do
+        grep -qx -- "$l" <<<"$valid" || ok=0
+    done
+    if (( ! ok )); then
+        log_warn "'$layout' isn't a valid XKB layout. Defaulting to 'us'."
+        layout="us"; variant=""
     fi
 
-    if [ -z "$system_layout" ]; then
-        system_layout="us"
-        log_warn "Could not detect system layout. Defaulting to 'us'."
-    else
-        log_info "Detected system keyboard layout: $system_layout"
-    fi
-
-    sed -i 's/\(kb_layout[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$system_layout"'"/g' "$lua_file"
-
-    log_ok "Successfully updated $lua_file with kb_layout = \"$system_layout\""
+    log_info "Using keyboard layout: $layout ${variant:+(variant: $variant)}"
+    sed -i 's/\(kb_layout[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$layout"'"/' "$lua_file"
+    sed -i 's/\(kb_variant[[:space:]]*=[[:space:]]*\)"[^"]*"/\1"'"$variant"'"/' "$lua_file"
+    log_ok "Updated $lua_file"
 }
 
 # =============================================================================
 #  PHASE: greeter
 # =============================================================================
 do_greeter() {
-    # TODO: Add greetd logic here
-    log_warn "Greeter phase not implemented yet."
-    return 0
+    sudo tee /etc/greetd/config.toml >/dev/null <<'EOF'
+[terminal]
+vt = 1
+[default_session]
+command = "tuigreet --time --remember --cmd start-hyprland"
+user = "greeter"
+EOF
+
+    sudo systemctl enable -f greetd.service
 }
 
 # =============================================================================
@@ -1002,6 +1027,10 @@ fi
 
 # Preflight always runs (it doesn't write state itself in check mode)
 do_preflight
+
+if [[ "$MODE" == "run" ]]; then
+    : > "$STATE_FILE"
+fi
 
 # Start sudo keepalive for install/resume modes
 _start_sudo_keepalive

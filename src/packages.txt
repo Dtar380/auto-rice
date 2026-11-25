@@ -1,95 +1,95 @@
 #==============================================================================
 # Wayland compositor and tools
 #==============================================================================
-hyprland                     # Wayland compositor (main graphical environment)
-xdg-desktop-portal           # portal support for sandboxed apps (Flatpak, etc.)
-xdg-desktop-portal-hyprland  # Hyprland-specific integration for XDG portals
-xdg-desktop-portal-gtk       # GTK environment integration for XDG portals
-xdg-user-dirs                # Tool to properly register User directories
-xdg-utils                    # Standard desktop utilities
-hyprcursor                   # Hyprland cursor theming
-hypridle                     # manages idle behavior, screen locking, and suspend
-hyprsunset                   # Blue light filter for hyprland
-grim                         # Screenshot utility
-slurp                        # Region selector for screenshots
-hyprpicker                   # color picker
-quickshell                   # Wayland QT shell toolkit
-awww                         # wallpaper engine
-wl-clipboard                 # clipboard utilities for Wayland (terminal copy/paste)
-cliphist                     # clipboard history manager (requires wl-clipboard)
-
-#==============================================================================
-# System integration & authentication
-#==============================================================================
-hyprpolkitagent              # Authentication agent — lets GUI apps request elevation
+hyprland                      # Wayland compositor (main graphical environment)
+xdg-desktop-portal            # portal support for sandboxed apps (Flatpak, etc.)
+xdg-desktop-portal-hyprland   # Hyprland-specific integration for XDG portals
+xdg-desktop-portal-gtk        # GTK environment integration for XDG portals
+xdg-user-dirs                 # Tool to properly register User directories
+xdg-utils                     # Standard desktop utilities
+hyprcursor                    # Hyprland cursor theming
+hypridle                      # manages idle behavior, screen locking, and suspend
+hyprsunset                    # Blue light filter for hyprland
+grim                          # Screenshot utility
+slurp                         # Region selector for screenshots
+hyprpicker                    # color picker
+quickshell                    # Wayland QT shell toolkit
+awww                          # wallpaper engine
+wl-clipboard                  # clipboard utilities for Wayland (terminal copy/paste)
+cliphist                      # clipboard history manager (requires wl-clipboard)
 
 #==============================================================================
 # Login/display manager
 #==============================================================================
-greetd                       # Login manager
-greetd-tuigreet              # TUI greeter as fallback
+greetd                        # Login manager
+greetd-tuigreet               # TUI greeter as fallback
 
 #==============================================================================
 # Qt app support
 #==============================================================================
-qt5ct                        # Qt5 theme/font/icon configuration tool
-qt6ct                        # Qt6 theme/font/icon configuration tool
-qt6-5compat                  # Qt6 compatibility with Qt5
+qt5ct                         # Qt5 theme/font/icon configuration tool
+qt6ct                         # Qt6 theme/font/icon configuration tool
+qt6-5compat                   # Qt6 compatibility with Qt5
+qt6-Multimedia                # Qt6 multimedia player
+qt6-imageformats              # Qt6 image format handler
+qt6-shadertools               # Qt6 compile custom shaders
+qt6-svg                       # Qt6 svg support
 
 #==============================================================================
 # Fonts
 #==============================================================================
-ttf-jetbrains-mono-nerd      # Nerd Font with icons for terminal and widgets
-ttf-nerd-fonts-symbols       # Fallback icon font
-ttf-font-awesome             # icon fonts for apps and widgets
-noto-fonts                   # general-purpose font family
-noto-fonts-emoji             # emoji support for terminal and apps
-noto-fonts-cjk               # CJK character support (Chinese, Japanese, Korean)
+ttf-jetbrains-mono-nerd       # Nerd Font with icons for terminal and widgets
+ttf-nerd-fonts-symbols        # Fallback icon font
+ttf-font-awesome              # icon fonts for apps and widgets
+ttf-material-symbols-variable # Material Symbols icon font (used by MaterialSymbol.qml)
+noto-fonts                    # general-purpose font family
+noto-fonts-emoji              # emoji support for terminal and apps
+noto-fonts-cjk                # CJK character support (Chinese, Japanese, Korean)
 
 #==============================================================================
 # Terminal and utilities
 #==============================================================================
-alacritty                    # GPU-accelerated terminal emulator
-btop                         # Resource and process monitor
-tmux                         # Terminal multiplexer
-fastfetch                    # system information tool similar to neofetch
-oh-my-posh                   # customizable and advanced shell prompt
-fzf                          # fuzzy finder for the terminal
-fd                           # file searcher
-lsd                          # modern ls replacement with colors and icons
-bat                          # enhanced cat with syntax highlighting and line numbers
-zoxide                       # smart and fast directory navigation
-ripgrep                      # fast text search in files
-libnotify                    # Provides notify-send — used by rice scripts for popups
-pamixer                      # PipeWire/PulseAudio volume control from CLI and scripts
-cava			             # Music bar viewer
+alacritty                     # GPU-accelerated terminal emulator
+btop                          # Resource and process monitor
+tmux                          # Terminal multiplexer
+fastfetch                     # system information tool similar to neofetch
+oh-my-posh                    # customizable and advanced shell prompt
+fzf                           # fuzzy finder for the terminal
+fd                            # file searcher
+lsd                           # modern ls replacement with colors and icons
+bat                           # enhanced cat with syntax highlighting and line numbers
+zoxide                        # smart and fast directory navigation
+ripgrep                       # fast text search in files
+libnotify                     # Provides notify-send — used by rice scripts for popups
+pamixer                       # PipeWire/PulseAudio volume control from CLI and scripts
+cava                          # Music bar viewer
 
 #==============================================================================
 # File explorer
 #==============================================================================
-yazi                         # terminal-based file manager
-ueberzugpp                   # Image rendering backend for Yazi
-poppler-glib                 # Compat for ueberzugpp
-openslide                    # Compat for ueberzugpp
-poppler                      # PDF previews on Yazi
-7zip                         # Zip tool, helps viewing inside a Zip file on Yazi
-resvg                        # SVG previews on Yazi
+yazi                          # terminal-based file manager
+ueberzugpp                    # Image rendering backend for Yazi
+poppler-glib                  # Compat for ueberzugpp
+openslide                     # Compat for ueberzugpp
+poppler                       # PDF previews on Yazi
+7zip                          # Zip tool, helps viewing inside a Zip file on Yazi
+resvg                         # SVG previews on Yazi
 
 #==============================================================================
 # Multimedia
 #==============================================================================
-mpv                          # video and audio player
-playerctl                    # control media players from the terminal
-ffmpeg                       # Video and audio manipulation library
-imagemagick                  # Image manipulation library
+mpv                           # video and audio player
+playerctl                     # control media players from the terminal
+ffmpeg                        # Video and audio manipulation library
+imagemagick                   # Image manipulation library
 
 #==============================================================================
 # Browser
 #==============================================================================
-zen-browser-bin              # minimalistic browser (Wayland compatible)
+zen-browser-bin               # minimalistic browser (Wayland compatible)
 
 #==============================================================================
 # Editors
 #==============================================================================
-neovim                       # modern text editor, an improved version of Vim
-neomutt                      # terminal-based email client
+neovim                        # modern text editor, an improved version of Vim
+neomutt                       # terminal-based email client
