@@ -9,7 +9,7 @@
 #   ./install --resume  → resume from last successful phase
 # =============================================================================
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # =============================================================================
 #  CONSTANTS & GLOBAL STATE
@@ -292,7 +292,7 @@ do_preflight() {
     fi
 
     # Check required tools exist
-    local required_tools=(git lspci localectl pacman curl)
+    local required_tools=(localectl pacman curl)
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" &>/dev/null; then
             log_error "Required tool not found: $tool"
@@ -611,6 +611,7 @@ do_services() {
 
     # Enable power-profiles-daemon
     _enable_system_service power-profiles-daemon
+    _enable_system_service upower
 
     # Enable bluetooth only if hardware is present
     if rfkill list bluetooth &>/dev/null || lsusb 2>/dev/null | grep -qi bluetooth || \
@@ -625,8 +626,6 @@ do_services() {
     _enable_user_service pipewire-audio
     _enable_user_service pipewire-pulse.socket
     _enable_user_service wireplumber
-
-    _enable_user_service upower
 
     log_ok "Service configuration complete."
 }
@@ -688,6 +687,10 @@ readonly UEBERZUGPP_BASE_SHA="f05dd64dfe95164c56079408d4e61b80b34f571f"
 _build_ueberzugpp_fix() {
     local dir="/tmp/ueberzugpp-build-$$"
     local patch="$SCRIPT_DIR/assets/patches/ueberzugpp-pr293.patch"
+    if [[ ! -f "$patch" ]]; then
+        log_error "Patch not found: $patch"
+        return 1
+    fi
     rm -rf "$dir"
     git clone https://github.com/jstkdng/ueberzugpp.git "$dir" &&
     git -C "$dir" fetch origin pull/293/head &&
@@ -908,11 +911,14 @@ do_keyboard() {
 #  PHASE: greeter
 # =============================================================================
 do_greeter() {
-    sudo tee /etc/greetd/config.toml >/dev/null <<'EOF'
+    local session_cmd="start-hyprland"
+    command -v start-hyprland &>/dev/null || { log_warn "start-hyprland not found; using Hyprland."; session_cmd="Hyprland"; }
+
+    sudo tee /etc/greetd/config.toml >/dev/null <<EOF
 [terminal]
 vt = 1
 [default_session]
-command = "tuigreet --time --remember --cmd start-hyprland"
+command = "tuigreet --time --remember --cmd $session_cmd"
 user = "greeter"
 EOF
 

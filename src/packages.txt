@@ -30,7 +30,7 @@ greetd-tuigreet               # TUI greeter as fallback
 qt5ct                         # Qt5 theme/font/icon configuration tool
 qt6ct                         # Qt6 theme/font/icon configuration tool
 qt6-5compat                   # Qt6 compatibility with Qt5
-qt6-Multimedia                # Qt6 multimedia player
+qt6-multimedia                # Qt6 multimedia player
 qt6-imageformats              # Qt6 image format handler
 qt6-shadertools               # Qt6 compile custom shaders
 qt6-svg                       # Qt6 svg support
