@@ -50,7 +50,6 @@ noto-fonts-cjk                # CJK character support (Chinese, Japanese, Korean
 # Terminal and utilities
 #==============================================================================
 alacritty                     # GPU-accelerated terminal emulator
-btop                          # Resource and process monitor
 tmux                          # Terminal multiplexer
 fastfetch                     # system information tool similar to neofetch
 oh-my-posh                    # customizable and advanced shell prompt
@@ -63,6 +62,7 @@ ripgrep                       # fast text search in files
 libnotify                     # Provides notify-send — used by rice scripts for popups
 pamixer                       # PipeWire/PulseAudio volume control from CLI and scripts
 cava                          # Music bar viewer
+qalc                          # Calculator in the terminal
 
 #==============================================================================
 # File explorer

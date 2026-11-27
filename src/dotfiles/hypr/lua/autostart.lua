@@ -5,8 +5,8 @@
 hl.on("hyprland.start", function()
     -- needed
     hl.exec_cmd("/usr/lib/xdg-desktop-portal")
+	hl.exec_cmd("/usr/lib/gsd-rfkill")
     -- hypr tools
-    hl.exec_cmd('systemctl --user start hyprpolkitagent.service')
     hl.exec_cmd('hyprsunset')
     hl.exec_cmd('hypridle')
     -- background
