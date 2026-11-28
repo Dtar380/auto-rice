@@ -1,0 +1,8 @@
+[General]
+resize_algorithm = 'bilinear'
+
+hotspot_x = 0.08
+hotspot_y = 0.08
+
+define_override = 'left_ptr;arrow;top_left_arrow'
+define_size = '32, image.svg'

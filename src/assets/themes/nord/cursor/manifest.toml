@@ -1,0 +1,7 @@
+[General]
+name = "Material Nord"
+description = "Minimalist material inspired nord theme cursors"
+version = "1.0.0"
+author = "Dtar380"
+
+cursors_directory = "cursors"
